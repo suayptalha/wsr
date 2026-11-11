@@ -1,0 +1,17 @@
+{
+  "work_dir": "work",
+  "data_dir": "data",
+  "models": {
+    "27b": "/path/to/Qwen3.8-27B",
+    "9b": "/path/to/Qwen3.5-9B",
+    "muse30b": "/path/to/Muse-Glimmer-30B"
+  },
+  "agent_edits_dir": "",
+  "readers": {
+    "27b": {"url": "http://localhost:8001", "model": "Qwen3.8-27B"},
+    "9b": {"url": "http://localhost:8002", "model": "Qwen3.5-9B"},
+    "muse30b": {"url": "http://localhost:8003", "model": "Muse-Glimmer-30B"}
+  },
+  "judge": {"url": "http://localhost:8001", "model": "Qwen3.8-27B"},
+  "sandbox": {"runtime": "docker", "image": "wsr-sandbox", "docker_args": ["--network", "host"]}
+}
