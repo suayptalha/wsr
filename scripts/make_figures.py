@@ -126,7 +126,7 @@ def banner():
     s.add('<rect x="76" y="190" width="214" height="6" rx="3" fill="url(#glow)"/>')
     s.text(74, 236, "weight-space reading & programming", 30, "#e2e8f0", 600)
     s.text(74, 272, "Can a model tell what an edit to its weights will do, without running it? Can it write one?", 17, "#94a3b8")
-    s.save("banner.svg")
+    s.save("wsr-banner.svg")
 
 
 # ---------------------------------------------------------------- overview
@@ -148,7 +148,7 @@ def overview():
     s.label(900, mid - 30, "ŷ", "blue")
     s.arrow([(870, 400), (930, 400)], "teal")
     s.label(900, 370, "y", "teal")
-    s.save("overview.svg")
+    s.save("wsr-overview.svg")
 
 
 # ---------------------------------------------------------------- pipeline
@@ -174,7 +174,7 @@ def pipeline():
         s.text(x + 23 + 3.5 * len(hw), 163, hw, 11, acc, 600, "middle", MONO)
         if i:
             s.arrow([(x - gap + 3, 128), (x - 3, 128)])
-    s.save("pipeline.svg")
+    s.save("wsr-pipeline.svg")
 
 
 # ---------------------------------------------------------------- the three modes
@@ -198,7 +198,7 @@ def modes():
         for j, ln in enumerate(lines):
             s.add(f'<circle cx="{x + 28}" cy="{203 + j * 30}" r="3.5" fill="{C[col][0]}"/>')
             s.text(x + 42, 208 + j * 30, ln, 14, MUTED)
-    s.save("modes.svg")
+    s.save("wsr-modes.svg")
 
 
 # ---------------------------------------------------------------- crossed design
@@ -220,7 +220,7 @@ def crossed():
             s.text(x + 100, y + 48, "self" if own else "other", 18, acc if own else MUTED, 700, "middle")
             s.text(x + 100, y + 74, f"{r} reads {t}", 13, MUTED, 400, "middle", MONO)
     s.text(320, 412, "interaction = (A→A − B→A) + (B→B − A→B): a self-advantage net of reader skill", 13, MUTED, 400, "middle")
-    s.save("crossed.svg")
+    s.save("wsr-crossed.svg")
 
 
 # ---------------------------------------------------------------- wsr program loop
@@ -242,7 +242,7 @@ def program_loop():
     s.label(895, 205, "yes", "amber")
     s.curve("M745,350 C745,392 445,392 445,354", "amber", dash=True)
     s.label(595, 386, "next round starts from the accepted model", "amber")
-    s.save("program.svg")
+    s.save("wsr-program.svg")
 
 
 if __name__ == "__main__":

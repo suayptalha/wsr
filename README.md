@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/assets/banner.svg" width="100%" alt="wsr: weight-space reading and programming"></p>
+<p align="center"><img src="docs/assets/wsr-banner.svg" width="100%" alt="wsr: weight-space reading and programming"></p>
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
@@ -14,7 +14,7 @@
 write such an edit itself?** `wsr` is a toolkit for measuring both, on any open-weight model, with any model as
 the agent: open or closed, served locally or reached through an API.
 
-<p align="center"><img src="docs/assets/overview.svg" width="900" alt="Weight-space reading: an edit is applied to a target model; its effect is measured by running the edited model and predicted by a sandboxed reader agent that only sees the weights"></p>
+<p align="center"><img src="docs/assets/wsr-overview.svg" width="900" alt="Weight-space reading: an edit is applied to a target model; its effect is measured by running the edited model and predicted by a sandboxed reader agent that only sees the weights"></p>
 
 - **Reading** (`wsr read`). An agent gets the target model's weights and a surgical edit to them. In a CPU-only
   sandbox, with Python but no way to run the model, it predicts whether each behavior goes up, down or stays the
@@ -30,7 +30,7 @@ the agent: open or closed, served locally or reached through an API.
 ship as presets and are covered by tests that check them against the released code. The paper's results are not
 part of this repository.
 
-<p align="center"><img src="docs/assets/modes.svg" width="820" alt="Reading and programming share models, agents, sandbox and suites"></p>
+<p align="center"><img src="docs/assets/wsr-modes.svg" width="820" alt="Reading and programming share models, agents, sandbox and suites"></p>
 
 ## Contents
 
@@ -88,7 +88,7 @@ hours: 0.5                         # per reading session
 
 ## How it works
 
-<p align="center"><img src="docs/assets/pipeline.svg" width="900" alt="pool, measure, label, select, materialize, read, score and report"></p>
+<p align="center"><img src="docs/assets/wsr-pipeline.svg" width="900" alt="pool, measure, label, select, materialize, read, score and report"></p>
 
 | step | what happens | needs |
 |---|---|---|
@@ -112,7 +112,7 @@ change-detection AUROC, and breaks accuracy down by behavior.
 - **crossed 2×2 interaction**, when two models each read themselves and each other. This contrast separates a
   self-reading advantage from plain reader skill.
 
-<p align="center"><img src="docs/assets/crossed.svg" width="420" alt="crossed 2x2 design"></p>
+<p align="center"><img src="docs/assets/wsr-crossed.svg" width="420" alt="crossed 2x2 design"></p>
 
 **Conditions.**
 
@@ -278,7 +278,7 @@ the edit is not destructive.
 `wsr program` turns a goal into an edited model, the way a fine-tuning config turns a dataset into a trained one,
 but without any training.
 
-<p align="center"><img src="docs/assets/program.svg" width="900" alt="wsr program: inputs, attempts, acceptance, output; each round starts from the accepted model"></p>
+<p align="center"><img src="docs/assets/wsr-program.svg" width="900" alt="wsr program: inputs, attempts, acceptance, output; each round starts from the accepted model"></p>
 
 ```yaml
 # programs/eiffel_rome.yaml          (wsr init --program writes this and a second example)
