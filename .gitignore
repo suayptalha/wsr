@@ -1,5 +1,11 @@
 __pycache__/
 *.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+wsr.yaml
 config.json
-data/
-work/
+/data/
+/work/
+/experiments/

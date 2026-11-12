@@ -1,0 +1,9 @@
+name: muse_standard
+description: "Paper: 34 standard edits and 6 no-op controls on Muse-30B, all read"
+suite: paper
+targets: [muse30b]
+readers: {muse30b: [muse30b, 27b, 9b]}
+pool: {kind: paper.muse_standard}
+conditions: [weights, text]
+selection: {select_all: true}
+hours: 1.5

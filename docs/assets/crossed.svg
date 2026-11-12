@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="369.311391pt" height="244.546141pt" viewBox="0 0 369.311391 244.546141" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-13T02:05:23.020848</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 244.546141 
+L 369.311391 244.546141 
+L 369.311391 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 93.438 132.2208 
+L 181.602 132.2208 
+Q 186.066 132.2208 186.066 127.7856 
+L 186.066 65.1384 
+Q 186.066 60.7032 181.602 60.7032 
+L 93.438 60.7032 
+Q 88.974 60.7032 88.974 65.1384 
+L 88.974 127.7856 
+Q 88.974 132.2208 93.438 132.2208 
+z
+" clip-path="url(#p7084d9548c)" style="fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 227.358 132.2208 
+L 315.522 132.2208 
+Q 319.986 132.2208 319.986 127.7856 
+L 319.986 65.1384 
+Q 319.986 60.7032 315.522 60.7032 
+L 227.358 60.7032 
+Q 222.894 60.7032 222.894 65.1384 
+L 222.894 127.7856 
+Q 222.894 132.2208 227.358 132.2208 
+z
+" clip-path="url(#p7084d9548c)" style="fill: #f8fafc; stroke: #4b5563; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 93.438 218.1528 
+L 181.602 218.1528 
+Q 186.066 218.1528 186.066 213.7176 
+L 186.066 151.0704 
+Q 186.066 146.6352 181.602 146.6352 
+L 93.438 146.6352 
+Q 88.974 146.6352 88.974 151.0704 
+L 88.974 213.7176 
+Q 88.974 218.1528 93.438 218.1528 
+z
+" clip-path="url(#p7084d9548c)" style="fill: #f8fafc; stroke: #4b5563; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 227.358 218.1528 
+L 315.522 218.1528 
+Q 319.986 218.1528 319.986 213.7176 
+L 319.986 151.0704 
+Q 319.986 146.6352 315.522 146.6352 
+L 227.358 146.6352 
+Q 222.894 146.6352 222.894 151.0704 
+L 222.894 213.7176 
+Q 222.894 218.1528 227.358 218.1528 
+z
+" clip-path="url(#p7084d9548c)" style="fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #4b5563" x="204.48" y="17.46" transform="rotate(-0 204.48 17.46)">target (whose weights)</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 10px; font-family: 'DejaVu Sans'; fill: #4b5563" transform="translate(20.309375 141.507687) rotate(-90)">reader</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="137.52" y="39.636" transform="rotate(-0 137.52 39.636)">model A</text>
+   </g>
+   <g id="text_4">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="271.44" y="39.636" transform="rotate(-0 271.44 39.636)">model B</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="56.61" y="97.973344" transform="rotate(-0 56.61 97.973344)">model A</text>
+   </g>
+   <g id="text_6">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #1d4ed8" x="137.52" y="99.220112" transform="rotate(-0 137.52 99.220112)">self</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #4b5563" x="271.44" y="99.220112" transform="rotate(-0 271.44 99.220112)">other</text>
+   </g>
+   <g id="text_8">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="56.61" y="183.905344" transform="rotate(-0 56.61 183.905344)">model B</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #4b5563" x="137.52" y="185.152112" transform="rotate(-0 137.52 185.152112)">other</text>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #1d4ed8" x="271.44" y="185.152112" transform="rotate(-0 271.44 185.152112)">self</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 8.3px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #4b5563" x="204.48" y="239.22" transform="rotate(-0 204.48 239.22)">interaction = (A→A − B→A) + (B→B − A→B): self-advantage net of reader skill</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p7084d9548c">
+   <rect x="3.6" y="3.6" width="345.96" height="221.76"/>
+  </clipPath>
+ </defs>
+</svg>

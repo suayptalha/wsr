@@ -1,0 +1,12 @@
+name: full_dose
+description: "Paper, round 1: Full-Dose edits to Qwen3.8-27B and Qwen3.5-9B, read by both and by Muse-30B"
+suite: paper
+targets: [27b, 9b]
+readers:
+  27b: [27b, 9b, muse30b]
+  9b: [9b, 27b, muse30b]
+pool: {kind: paper.full_dose}      # agent-proposed edits need `agent_edits_dir` (not distributed)
+conditions: [weights, text]
+framing_control: true              # self cells are also run under the Other framing
+selection: {n_changed: 30, n_same: 10, family_cap: 8}
+hours: 1.5

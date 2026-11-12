@@ -1,0 +1,9 @@
+name: muse
+description: "Paper, round 3: norm-gain and gate edits to Muse-Glimmer-30B, read by itself and by Qwen3.8-27B"
+suite: paper
+targets: [muse30b]
+readers: {muse30b: [muse30b, 27b]}
+pool: {kind: paper.muse}
+conditions: [weights, text]
+selection: {n_changed: 30, n_same: 10, family_cap: 10}
+hours: 1.5

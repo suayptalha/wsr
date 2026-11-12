@@ -1,0 +1,12 @@
+name: subtle
+description: "Paper, round 2: non-destructive doses of the effective Full-Dose edits"
+suite: paper
+parent: paper.full_dose            # reuses its base runs and identical measurements
+targets: [27b, 9b]
+readers:
+  27b: [27b, 9b]
+  9b: [9b, 27b]
+pool: {kind: paper.subtle}
+conditions: [weights, text]
+selection: {n_changed: 30, n_same: 10, family_cap: 10, non_destructive_only: true}
+hours: 1.5

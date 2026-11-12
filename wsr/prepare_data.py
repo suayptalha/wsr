@@ -1,6 +1,6 @@
 """Download the source datasets and write the probe pools.
 
-    python -m wsr.prepare_data --out data
+    wsr data --out data        (or: python -m wsr.prepare_data --out data)
 
 Writes data/math.jsonl (MATH training problems), data/mc.jsonl (MMLU-Pro), data/syco.jsonl (MMLU-Pro items with a
 suggested answer, disjoint from mc.jsonl) and data/strongreject.jsonl. The probe sets themselves are drawn from these
@@ -13,9 +13,7 @@ import json
 import random
 from pathlib import Path
 
-from datasets import concatenate_datasets, load_dataset
-
-from .grading import LETTERS, last_boxed
+from .suites.grading import LETTERS, last_boxed
 
 MATH_SUBJECTS = ["algebra", "counting_and_probability", "geometry", "intermediate_algebra",
                  "number_theory", "prealgebra", "precalculus"]
@@ -44,12 +42,9 @@ def suggested_answer_variants(items: list[dict], rng: random.Random) -> list[dic
     return out
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="data")
-    ap.add_argument("--seed", type=int, default=1234)
-    a = ap.parse_args()
-    out, rng = Path(a.out), random.Random(a.seed)
+def prepare(out_dir: str = "data", seed: int = 1234) -> None:
+    from datasets import concatenate_datasets, load_dataset
+    out, rng = Path(out_dir), random.Random(seed)
 
     # MMLU-Pro: disjoint slices for the suggested-answer pool and the multiple-choice pool.
     # The order of random draws below is kept fixed so that the resulting pools are reproducible.
@@ -81,6 +76,14 @@ def main():
 
     sr = load_dataset("walledai/StrongREJECT", split="train")
     write(out / "strongreject.jsonl", [{"id": f"sr-{i}", "task": "chat", "question": r["prompt"]} for i, r in enumerate(sr)])
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="data")
+    ap.add_argument("--seed", type=int, default=1234)
+    a = ap.parse_args()
+    prepare(a.out, a.seed)
 
 
 if __name__ == "__main__":

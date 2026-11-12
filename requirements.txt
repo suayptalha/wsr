@@ -1,7 +1,10 @@
+# minimal install: pip install -e .        extras: .[hf] .[vllm] .[anthropic] .[paper] .[report] .[all]
 torch
 safetensors
 numpy
 httpx
-datasets
-vllm
-math-verify
+pyyaml
+huggingface_hub
+tokenizers
+transformers>=4.45
+matplotlib

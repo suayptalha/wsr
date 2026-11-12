@@ -1,0 +1,61 @@
+# wsr configuration: what exists on this machine. Experiments (what to run) live in separate files.
+# Every key below is optional except `models`; delete what you do not use.
+
+work_dir: work          # measurements, labels, sessions and scores, one folder per experiment
+data_dir: data          # probe pools of the paper suite (`wsr data`); the toy suite needs nothing here
+
+# ---------------------------------------------------------------- models whose weights are edited and read
+# `path` is a local checkpoint directory (safetensors) or a Hugging Face repo id (downloaded on first use).
+# backend: hf (Transformers, GPU or CPU) or vllm (GPU, much faster). `wsr inspect <key>` shows what wsr
+# detects in a checkpoint (layers, unembedding, norms, token rows); anything wrong can be set under `anatomy:`.
+models:
+  tiny:
+    path: Qwen/Qwen2.5-0.5B-Instruct
+    backend: hf
+    thinking: null           # true/false: pass enable_thinking to the chat template; null: leave the template alone
+    answer_format: think     # text after </think> is the answer (no effect if the model does not think)
+    hf: {batch_size: 16}     # device / dtype are picked automatically
+  # qwen7b:
+  #   path: Qwen/Qwen2.5-7B-Instruct
+  #   backend: vllm
+  #   vllm: {gpu_memory_utilization: 0.85}
+  # The paper's models use presets (key 27b / 9b / muse30b, or `preset:`), which fix the measurement settings:
+  # 27b: {path: /models/Qwen3.8-27B}
+
+# ---------------------------------------------------------------- agents that read or program weights
+# Any chat model: provider openai (and every OpenAI-compatible service: openrouter, gemini, together, groq,
+# deepseek, mistral, xai, fireworks, ollama, lmstudio, vllm) or anthropic (Claude).
+# API keys come from the environment (OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY, ...).
+# harness: builtin (default; wsr's own tool loop, works with every provider), opencode, claude-code, codex,
+# command (any CLI), direct (no tools, Text-Only only) or baseline (no model).
+# `identity: <model key>` says that this agent IS that model: reading it is then "self-reading".
+agents:
+  claude:
+    provider: anthropic
+    model: claude-opus-5-5
+    params: {output_config: {effort: high}}
+  gpt:
+    provider: openai
+    model: gpt-5
+  openrouter:
+    provider: openrouter
+    model: qwen/qwen3-235b-a22b
+  local:                       # a model you serve yourself, e.g. `vllm serve Qwen/Qwen2.5-0.5B-Instruct --port 8000`
+    provider: openai
+    base_url: http://localhost:8000/v1
+    model: Qwen/Qwen2.5-0.5B-Instruct
+    identity: tiny             # this endpoint serves the `tiny` model: it reads its own weights
+  same:                        # the floor: always predicts "no change"
+    harness: baseline
+    params: {strategy: same}
+
+# ---------------------------------------------------------------- judge for behaviors that need one (refusal)
+# heuristic (keyword rules, no model), the name of an agent above, or an endpoint mapping.
+judge: heuristic
+
+# ---------------------------------------------------------------- sandbox for agent code
+# docker (recommended): build once with `docker build -t wsr-sandbox sandbox/`.
+# apptainer: image = path of a .sif file. local: no isolation, for trusted agents and tests only.
+sandbox:
+  runtime: docker
+  image: wsr-sandbox

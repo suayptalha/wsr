@@ -1,0 +1,12 @@
+# The smallest complete experiment: standard edits to a small model, measured on the bundled toy suite and read
+# by the agents you list. Runs on a laptop CPU (measurement takes about half an hour); a GPU makes it minutes.
+name: quickstart
+description: "Standard edits to one small model, toy suite, any readers"
+suite: toy
+targets: [tiny]                    # model keys from wsr.yaml
+readers: [same, claude]            # agent keys from wsr.yaml; `same` is the always-"no change" floor
+pool: {kind: standard, size: small}
+conditions: [weights, text]
+base_runs: 5
+selection: {n_changed: 12, n_same: 6, family_cap: 4, n_batches: 2}
+hours: 0.5

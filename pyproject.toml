@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wsr"
+version = "0.2.0"
+description = "Weight-space reading and programming: can a language model predict, or write, what an edit to a network's weights does?"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Şuayp Talha Kocabay"}]
+keywords = ["interpretability", "weight-space", "language-models", "evaluation", "agents"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["torch", "safetensors", "numpy", "httpx", "pyyaml", "huggingface_hub", "tokenizers"]
+
+[project.optional-dependencies]
+hf = ["transformers>=4.45", "accelerate"]
+vllm = ["vllm"]
+anthropic = ["anthropic"]
+paper = ["datasets", "math-verify", "vllm"]
+report = ["matplotlib"]
+all = ["transformers>=4.45", "accelerate", "anthropic", "datasets", "math-verify", "matplotlib"]
+dev = ["pytest", "transformers>=4.45", "matplotlib"]
+
+[project.scripts]
+wsr = "wsr.cli:main"
+
+[project.urls]
+Repository = "https://github.com/suayptalha/wsr"
+
+[tool.setuptools.packages.find]
+include = ["wsr*"]
+
+[tool.setuptools.package-data]
+wsr = ["presets/**/*.yaml", "presets/**/*.jsonl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

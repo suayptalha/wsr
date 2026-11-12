@@ -1,113 +1,120 @@
-"""Ground-truth measurement: apply an intervention in place inside vLLM and run the fixed probe sets."""
+"""Ground truth: run the base model and every edited model of the pool on the suite's probe sets.
+
+The base model is measured ``base_runs`` times with different seeds (the noise floor); each edited model once.
+An experiment with a ``parent`` reuses the parent's base runs and the measurement of any edit identical to one the
+parent already measured (``same_as``).
+"""
 from __future__ import annotations
 
 import json
 import os
-import random
-import re
-import shutil
-import tempfile
 import time
 from pathlib import Path
 
-from .common import BASE_RUNS, MAX_TOKENS, SAMPLING, Layout, read_jsonl
-
-
-def probe_items(data_dir: Path) -> list[dict]:
-    """64 MATH problems, 100 MMLU-Pro items, 48 wrong-hint + 16 right-hint items, 60 StrongREJECT prompts (seed 777)."""
-    rng = random.Random(777)
-    rd = lambda p: read_jsonl(data_dir / p)  # noqa: E731
-    math = rng.sample(rd("math.jsonl"), 64)
-    mc = rng.sample(rd("mc.jsonl"), 100)
-    sy = rd("syco.jsonl")
-    sy = rng.sample([x for x in sy if x["hint_type"] == "wrong"], 48) + rng.sample([x for x in sy if x["hint_type"] == "right"], 16)
-    chat = rng.sample(rd("strongreject.jsonl"), 60)
-    return math + mc + sy + chat
-
-
-def final_text(target: str, text: str) -> str:
-    """The answer after the reasoning block."""
-    if target == "muse30b":
-        text = text.split("<|eom|>")[-1]
-        return re.sub(r"<\|start\|>assistant|to=[A-Za-z_.]+<\|message\|>|<\|[a-z_]+\|>", "", text).strip()
-    return text.split("</think>")[-1]
-
-
-def _worker_load_weights(worker, path, base_dir, restore_names):
-    """Runs inside every vLLM worker: load replacement tensors (and restore previously patched ones from the base)."""
-    import torch
-    from .checkpoint import Checkpoint, load_tensors
-    items = []
-    if restore_names:
-        ck = Checkpoint(base_dir)
-        items += [(n, ck.get(n)) for n in restore_names]
-    if path:
-        items += list(load_tensors(path).items())
-    items = [(n, t.to(torch.bfloat16)) for n, t in items]
-    loaded = worker.model_runner.model.load_weights(iter(items))
-    torch.cuda.synchronize()
-    return len(items) if loaded is None else len(loaded)
+from .config import Layout, base_runs, model_dir, read_jsonl
 
 
 def run_ids(L: Layout, t: str) -> list[str]:
-    """Base runs plus every intervention of the pool whose measurement is not inherited from another round.
-    The Subtle round reuses the Full-Dose base runs and the measurements of identical Full-Dose specs."""
-    bases = [] if L.rnd == "subtle" else list(BASE_RUNS)
+    """Base runs plus every intervention of the pool whose measurement is not inherited from the parent."""
+    bases = [] if L.parent() else list(base_runs(L.exp))
     return bases + [s["id"] for s in read_jsonl(L.pool(t)) if "same_as" not in s]
 
 
 def measurement_file(L: Layout, t: str, rid: str, spec: dict | None = None) -> Path:
-    if L.rnd == "subtle" and (rid in BASE_RUNS or (spec and "same_as" in spec)):
-        return Layout(L.cfg, "full_dose").measure(t) / f"{spec['same_as'] if spec and 'same_as' in spec else rid}.jsonl"
+    P = L.parent()
+    if P is not None and (rid in base_runs(P.exp) or (spec and "same_as" in spec)):
+        return P.measure(t) / f"{spec['same_as'] if spec and 'same_as' in spec else rid}.jsonl"
     return L.measure(t) / f"{rid}.jsonl"
 
 
-def cmd_measure(cfg: dict, a) -> None:
-    from safetensors.torch import save_file
-    from vllm import LLM, SamplingParams
-    from .checkpoint import Checkpoint
-    from .edits import apply_ops
-    from .grading import build_messages, grade
-    L = Layout(cfg, a.round)
-    base = cfg["models"][a.target]
-    items = probe_items(Path(cfg["data_dir"]))
-    msgs = [build_messages(it) for it in items]
-    pool = {s["id"]: s for s in read_jsonl(L.pool(a.target))}
-    ids = a.ids or run_ids(L, a.target)
-    out = L.measure(a.target)
-    out.mkdir(parents=True, exist_ok=True)
-    ck = Checkpoint(base)
-    llm = LLM(model=base, tensor_parallel_size=1, max_model_len=MAX_TOKENS + 4096, gpu_memory_utilization=0.9,
-              max_num_seqs=256, enable_prefix_caching=True, trust_remote_code=True,
-              limit_mm_per_prompt={"image": 0, "video": 0})
-    tmp = Path(tempfile.mkdtemp(prefix="wsr_"))
-    patched: list[str] = []
-    for rid in ids:
-        f = out / f"{rid}.jsonl"
-        if f.exists():
+def base_ids(L: Layout) -> list[str]:
+    P = L.parent()
+    return list(base_runs(P.exp if P is not None else L.exp))
+
+
+def anatomy_for(cfg: dict, t: str, ck):
+    """The anatomy used to materialize edits: the paper's fixed names for its presets, detection otherwise."""
+    from .anatomy import Anatomy
+    from .ops import StaticAnatomy
+    m = cfg["models"][t]
+    if m.get("preset"):
+        return StaticAnatomy(**(m.get("anatomy") or {}))
+    return Anatomy(ck, m.get("anatomy"))
+
+
+def program_runs(L: Layout, t: str) -> dict[str, Path]:
+    """Submitted edits of programming sessions on target t: run id -> edit file."""
+    out = {}
+    for d in sorted(L.programs().glob("*")):
+        meta = d / "meta.json"
+        if not meta.exists():
             continue
-        t0 = time.time()
-        if rid in BASE_RUNS:
-            tensors, seed0, path = {}, BASE_RUNS[rid], ""
-        else:
-            tensors, _, _ = apply_ops(ck, pool[rid])
-            seed0, path = 0, str(tmp / "edit.safetensors")
-            save_file(tensors, path)
-        restore = sorted(n for n in patched if n not in tensors)
-        if restore or tensors:
-            llm.collective_rpc(_worker_load_weights, args=(path, base, restore))
-        llm.reset_prefix_cache()
-        patched = sorted(tensors)
-        extra = {"skip_special_tokens": False} if a.target == "muse30b" else {}
-        sps = [SamplingParams(max_tokens=MAX_TOKENS, seed=seed0 + i, **SAMPLING, **extra) for i in range(len(items))]
-        outs = llm.chat(msgs, sps, use_tqdm=False, chat_template_kwargs={"enable_thinking": True})
-        with open(str(f) + ".tmp", "w") as fh:
-            for it, o in zip(items, outs):
-                c = o.outputs[0]
-                rec = grade(it, final_text(a.target, c.text), len(c.token_ids), c.finish_reason == "length")
-                fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        os.replace(str(f) + ".tmp", f)
-        for p in tmp.iterdir():
-            p.unlink()
-        print(f"{rid} done in {time.time() - t0:.0f}s", flush=True)
-    shutil.rmtree(tmp, ignore_errors=True)
+        m = json.loads(meta.read_text())
+        if m.get("target") != t or not m.get("submission"):
+            continue
+        out[f"prog_{m['run_id']}"] = d / m["submission"]
+    return out
+
+
+def measure_runs(cfg: dict, exp: dict, t: str, ids: list[str] | None = None, programs: bool = False,
+                 log=print) -> int:
+    from .checkpoint import Checkpoint
+    from .backends import final_text, make_backend
+    from .ops import apply_ops, load_submission
+    from .suites import load_suite
+    L = Layout(cfg, exp)
+    suite = load_suite(exp["suite"], cfg["data_dir"])
+    items = suite.items(cfg["data_dir"])
+    msgs = [suite.messages(it) for it in items]
+    pool = {s["id"]: s for s in read_jsonl(L.pool(t))} if L.pool(t).exists() else {}
+    progs = program_runs(L, t) if programs else {}
+    todo = ids or (list(progs) if programs else run_ids(L, t))
+    out = L.measure(t)
+    out.mkdir(parents=True, exist_ok=True)
+    if programs and L.parent() is None:          # programs are labeled against the base runs: measure them first
+        todo = [b for b in base_runs(exp) if b not in todo] + todo
+    todo = [r for r in todo if not (out / f"{r}.jsonl").exists()]
+    if not todo:
+        log(f"{t}: nothing to measure ({out})")
+        return 0
+    mcfg = cfg["models"][t]
+    d = model_dir(cfg, t)
+    ck = Checkpoint(d)
+    anat = anatomy_for(cfg, t, ck)
+    fmt = mcfg.get("answer_format", "think")
+    log(f"{t}: measuring {len(todo)} runs x {len(items)} probe items with backend `{mcfg['backend']}`")
+    backend = make_backend(d, mcfg, suite)
+    seeds = base_runs(L.parent().exp if L.parent() else exp)
+    done = 0
+    try:
+        for rid in todo:
+            f = out / f"{rid}.jsonl"
+            if f.exists():
+                continue
+            t0 = time.time()
+            if rid in seeds:
+                tensors, seed0 = {}, seeds[rid]
+            elif rid in progs:
+                tensors, seed0 = load_submission(ck, progs[rid], anat), 0
+            else:
+                if rid not in pool:
+                    raise SystemExit(f"wsr: `{rid}` is not in the pool of {t}")
+                tensors, seed0 = apply_ops(ck, pool[rid], anat)[0], 0
+            backend.patch(tensors)
+            outs = backend.generate(msgs, seed0)
+            with open(str(f) + ".tmp", "w") as fh:
+                for it, o in zip(items, outs):
+                    rec = suite.grade(it, final_text(fmt, o.text), o.n_tokens, o.hit_limit)
+                    fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            os.replace(str(f) + ".tmp", f)
+            done += 1
+            log(f"{rid} done in {time.time() - t0:.0f}s ({done}/{len(todo)})")
+    finally:
+        backend.close()
+    return done
+
+
+def cmd_measure(cfg: dict, exp: dict, targets: list[str] | None, ids: list[str] | None = None,
+                programs: bool = False) -> None:
+    for t in targets or exp["targets"]:
+        measure_runs(cfg, exp, t, ids, programs)

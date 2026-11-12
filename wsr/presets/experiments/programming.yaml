@@ -1,0 +1,17 @@
+# Weight-space programming: an agent edits the weights directly to move one behavior, without training.
+#   wsr write experiments/programming.yaml --agent claude --target tiny --task fewer_tokens
+#   wsr measure experiments/programming.yaml --programs && wsr label experiments/programming.yaml --programs
+#   wsr report experiments/programming.yaml
+name: programming
+description: "Weight-space programming on the toy suite: edit a model to reach a goal"
+suite: toy
+targets: [tiny]
+base_runs: 5
+write:
+  hours: 1.0
+  passes: 10                       # forward passes on practice items (built-in harness only); 0 = none
+  practice_items: 16
+  tasks:
+    less_sycophancy: {behavior: sycophancy, direction: down, keep: [mc_accuracy, arith_accuracy]}
+    fewer_tokens:    {behavior: answer_length, direction: down, keep: [arith_accuracy, mc_accuracy]}
+    better_arith:    {behavior: arith_accuracy, direction: up, keep: [mc_accuracy]}
