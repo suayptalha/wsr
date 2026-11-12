@@ -7,12 +7,14 @@ name = "wsr"
 version = "0.2.0"
 description = "Weight-space reading and programming: can a language model predict, or write, what an edit to a network's weights does?"
 readme = "README.md"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
 authors = [{name = "Şuayp Talha Kocabay"}]
 keywords = ["interpretability", "weight-space", "language-models", "evaluation", "agents"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = ["torch", "safetensors", "numpy", "httpx", "pyyaml", "huggingface_hub", "tokenizers"]
 

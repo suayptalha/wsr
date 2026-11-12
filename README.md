@@ -26,7 +26,7 @@ part of this repository.
 - [Models](#models) · [Agents](#agents-any-model-any-api) · [Sandbox](#sandbox) · [Suites](#behavior-suites) · [Edits](#edits)
 - [Weight-space programming](#weight-space-programming)
 - [Reproducing the paper](#reproducing-the-paper)
-- [Commands](#commands) · [Layout of results](#where-results-go) · [Tests](#tests)
+- [Commands](#commands) · [Layout of results](#where-results-go) · [Tests](#tests) · [License](#license)
 
 ## Install
 
@@ -326,6 +326,10 @@ the whole pipeline runs end to end on a CPU in about a minute. They cover:
 - every edit op;
 - the agent loop, with scripted models;
 - the full reading and programming pipelines, end to end on a CPU.
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE).
 
 ## Citation
 
