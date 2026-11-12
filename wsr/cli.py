@@ -30,6 +30,12 @@ def cmd_init(a):
     for name in ("quickstart.yaml", "programming.yaml"):
         if not (exp_dir / name).exists():
             shutil.copy(PRESETS / "experiments" / name, exp_dir / name)
+    if a.program:
+        for f in sorted((PRESETS / "programs").glob("*")):
+            Path("programs").mkdir(exist_ok=True)
+            if not (Path("programs") / f.name).exists():
+                shutil.copy(f, Path("programs") / f.name)
+        print("wrote programs/: example weight-space programs and their goal data (wsr program programs/eiffel_rome.yaml)")
     print(f"wrote {dest} and experiments/quickstart.yaml, experiments/programming.yaml\n"
           f"next: edit {dest}, then `wsr doctor` and `wsr run experiments/quickstart.yaml`")
 
@@ -186,6 +192,7 @@ def main(argv=None):
     s = sub.add_parser("init", help="write a starter wsr.yaml and two example experiments")
     s.add_argument("--out", default="wsr.yaml")
     s.add_argument("--force", action="store_true")
+    s.add_argument("--program", action="store_true", help="also write example programs (programs/*.yaml + data)")
     s = sub.add_parser("doctor", help="check the installation, models, agents and sandbox")
     s.add_argument("--ping", action="store_true", help="send one request to every agent")
     s = sub.add_parser("inspect", help="show what wsr detects in a model's checkpoint")
@@ -223,7 +230,20 @@ def main(argv=None):
     s = exp_cmd("run", "run the whole reading pipeline, skipping finished steps")
     s.add_argument("--steps", help=f"comma-separated subset of: {PIPELINE.replace(' -> ', ',')}")
     s.add_argument("--hours", type=float)
-    s = exp_cmd("write", "run a weight-space programming session")
+    s = sub.add_parser("program", help="weight-space programming as a tool: an agent edits the weights to reach a goal; "
+                                       "accepted edits are saved as a new checkpoint")
+    s.add_argument("program", help="program YAML (see `wsr init --program` and docs/programming.md)")
+    s.add_argument("--set", dest="sets", action="append", default=[], metavar="KEY=VALUE",
+                   help="override a field, e.g. --set rounds=3 --set goal.metric=exact")
+    s.add_argument("--output-dir")
+    s = sub.add_parser("export", help="apply an edit file to a model and save the result as a new checkpoint")
+    s.add_argument("--model", required=True, help="key of wsr.yaml, local directory or Hugging Face repo id")
+    s.add_argument("--edit", required=True, help=".safetensors (full tensors or ::rows form) or .json op list")
+    s.add_argument("--out", required=True)
+    s.add_argument("--overwrite", action="store_true")
+    s.add_argument("--push", metavar="REPO_ID", help="also upload to the Hugging Face Hub (private unless --public)")
+    s.add_argument("--public", action="store_true")
+    s = exp_cmd("write", "run a weight-space programming session (evaluation; see `program` for the tool)")
     s.add_argument("--agent", required=True)
     s.add_argument("--target", required=True)
     s.add_argument("--task", required=True)
@@ -240,6 +260,27 @@ def main(argv=None):
         if a.cmd == "data" and not a.config:
             from .prepare_data import prepare
             return prepare(a.out or "data", a.seed)
+        if a.cmd == "program":
+            import yaml
+
+            from .programming import run
+            ov = {}
+            for kv in a.sets:
+                if "=" not in kv:
+                    raise ConfigError(f"--set expects KEY=VALUE, got `{kv}`")
+                k, v = kv.split("=", 1)
+                ov[k] = yaml.safe_load(v)
+            if a.output_dir:
+                ov["output_dir"] = a.output_dir
+            return run(a.program, ov, a.config)
+        if a.cmd == "export":
+            from . import export
+            out = export(a.model, a.edit, a.out, a.config, a.overwrite)
+            print(f"wrote {out}")
+            if a.push:
+                from .saving import push_to_hub
+                print(f"pushed to {push_to_hub(out, a.push, private=not a.public)}")
+            return
         cfg = load_config(a.config)
         if a.cmd == "doctor":
             return cmd_doctor(a, cfg)

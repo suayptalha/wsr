@@ -29,6 +29,9 @@ class Output:
 class Backend:
     def patch(self, tensors: dict) -> None: ...
     def generate(self, messages: list[list[dict]], seed0: int) -> list[Output]: ...
+    def logprob(self, messages: list[list[dict]], continuations: list[str]) -> list[tuple[float, int]]:
+        """(sum of log-probabilities, number of tokens) of each continuation after its prompt (teacher forced)."""
+        raise NotImplementedError
     def close(self) -> None: ...
 
 
@@ -90,6 +93,25 @@ class VLLMBackend(Backend):
         outs = self.llm.chat(messages, sps, use_tqdm=False, **({"chat_template_kwargs": kw} if kw else {}))
         return [Output(o.outputs[0].text, len(o.outputs[0].token_ids), o.outputs[0].finish_reason == "length")
                 for o in outs]
+
+    def logprob(self, messages, continuations):
+        from vllm import SamplingParams
+        tok = self.llm.get_tokenizer()
+        kw = _template_kwargs(self.cfg, self.suite)
+        prompts, starts = [], []
+        for m, c in zip(messages, continuations):
+            head = tok.apply_chat_template(m, tokenize=False, add_generation_prompt=True, **kw)
+            a = tok(head, add_special_tokens=False)["input_ids"]
+            b = tok(head + c, add_special_tokens=False)["input_ids"]
+            prompts.append({"prompt_token_ids": b})
+            starts.append(len(a))
+        outs = self.llm.generate(prompts, SamplingParams(max_tokens=1, prompt_logprobs=0), use_tqdm=False)
+        res = []
+        for o, st in zip(outs, starts):
+            ids, lps = o.prompt_token_ids, o.prompt_logprobs
+            vals = [lps[i][ids[i]].logprob for i in range(max(1, st), len(ids)) if lps[i] is not None]
+            res.append((float(sum(vals)), len(vals)))
+        return res
 
     def close(self):
         import shutil
@@ -175,6 +197,29 @@ class HFBackend(Backend):
                 text = self.tok.decode(row[:n], skip_special_tokens=self.cfg.get("skip_special_tokens", True))
                 out.append(Output(text, n, hit))
         return out
+
+    def logprob(self, messages, continuations):
+        import torch
+        res = []
+        for b in range(0, len(messages), self.batch_size):
+            seqs, starts = [], []
+            for m, c in zip(messages[b:b + self.batch_size], continuations[b:b + self.batch_size]):
+                head = self._prompt(m)
+                a = self.tok(head, add_special_tokens=False)["input_ids"]
+                full = self.tok(head + c, add_special_tokens=False)["input_ids"]
+                seqs.append(full)
+                starts.append(len(a))
+            n = max(len(x) for x in seqs)
+            pad = self.tok.pad_token_id
+            ids = torch.tensor([x + [pad] * (n - len(x)) for x in seqs], device=self.device)
+            mask = torch.tensor([[1] * len(x) + [0] * (n - len(x)) for x in seqs], device=self.device)
+            with torch.no_grad():
+                logits = self.model(input_ids=ids, attention_mask=mask).logits.float()
+            lp = torch.log_softmax(logits[:, :-1], -1).gather(-1, ids[:, 1:, None])[..., 0]
+            for i, (x, st) in enumerate(zip(seqs, starts)):
+                v = lp[i, max(0, st - 1):len(x) - 1]
+                res.append((float(v.sum()), int(v.numel())))
+        return res
 
     def close(self):
         self.patch({})

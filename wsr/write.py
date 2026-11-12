@@ -99,7 +99,7 @@ class ModelRunner:
 
     def __init__(self, cfg, exp, target, suite, practice, budget, work_host: Path, sb: Sandbox):
         self.cfg, self.exp, self.t, self.suite, self.practice = cfg, exp, target, suite, practice
-        self.left, self.work_host, self.sb = budget, work_host, sb
+        self.left, self.budget, self.work_host, self.sb = budget, budget, work_host, sb
         self.backend = self.ck = self.anat = None
         self.base_cache: dict = {}
         self.log = []
@@ -166,12 +166,8 @@ class ModelRunner:
             self.backend.close()
 
 
-def check_edit_tool(cfg, target, sb: Sandbox):
-    from .checkpoint import Checkpoint
-    from .measure import anatomy_for
+def check_edit_tool(ck, anat, frozen, sb: Sandbox):
     from .ops import load_submission, validate_edit
-    ck = Checkpoint(model_dir(cfg, target))
-    anat = anatomy_for(cfg, target, ck)
 
     def run(args):
         p = sb.readable_host_path(args["edit"])
@@ -181,7 +177,7 @@ def check_edit_tool(cfg, target, sb: Sandbox):
             full = load_submission(ck, p, anat)
         except Exception as e:  # noqa: BLE001
             return f"could not read the edit: {e}", True
-        v = validate_edit(ck, full, cfg["models"][target].get("frozen"))
+        v = validate_edit(ck, full, frozen)
         return json.dumps(v, indent=1)[:8000], not v["ok"]
     spec = {"name": "check_edit", "description": "Validate an edit file (.safetensors or .json): parameter names, shapes, "
                                                  "finite values; reports how much each tensor changed. Free.",
@@ -190,10 +186,73 @@ def check_edit_tool(cfg, target, sb: Sandbox):
     return spec, run
 
 
+RUN_MODEL_SCHEMA = {"type": "object", "properties": {
+    "edit": {"type": "string", "description": "path of the edit file, or 'base'"},
+    "n": {"type": "integer", "description": "number of practice items (default 16)"},
+    "task": {"type": "string", "description": "only items of this kind"}},
+    "required": ["edit"], "additionalProperties": False}
+
+
+def edit_session(cfg: dict, agent: dict, rd: Path, target_dir: Path, ck, anat, frozen, prompt_fn, hours: float,
+                 tools_fn=None, client=None, log=print, meta: dict | None = None) -> dict:
+    """One agent session that ends with an edit of the model at ``target_dir``, written to ``rd``.
+
+    ``prompt_fn(paths, passes_available)`` builds the task; ``tools_fn(sandbox)`` returns extra host-side tools
+    (name -> (spec, fn)) and an optional object with ``close()``/``log``/``left``. Returns the session's meta.
+    """
+    from .ops import load_submission, validate_edit
+    (rd / "logs").mkdir(parents=True, exist_ok=True)
+    pkg = install_helper(rd.parent / "_sandbox_pkg")
+    home = Path(tempfile.mkdtemp(prefix="agenthome_"))
+    cli = agent["harness"] in ("opencode", "claude-code", "codex", "command")
+    sb = Sandbox(cfg, {"work": (str(rd), False), "pkg": (str(pkg), True), "home": (str(home), False),
+                       "target": (str(target_dir), True)}, network=cli)
+    install_python_logger(rd, sb)
+    tools, runner = ({}, None) if cli else (tools_fn(sb) if tools_fn else ({}, None))
+    if not cli:
+        tools = {"check_edit": check_edit_tool(ck, anat, frozen, sb), **tools}
+    prompt = prompt_fn(sb.paths, "run_model" in tools)
+    (rd / "prompt.md").write_text(prompt)
+    edit_files = [rd / "edit.safetensors", rd / "edit.json"]
+    done = lambda: any(f.exists() for f in edit_files) and (rd / "rationale.md").exists()  # noqa: E731
+    meta = {**(meta or {}), "hours": hours, "harness": agent["harness"], "model": agent.get("model"), "started": time.time()}
+    deadline = meta["started"] + hours * 3600
+    goal = nudge(f"{sb.paths['work']}/edit.safetensors (or edit.json) and {sb.paths['work']}/rationale.md are written")
+    warn = (f"TIME IS ALMOST UP (about 15 minutes left). Make sure your best edit is in {sb.paths['work']}/edit.safetensors "
+            f"(or edit.json) and that {sb.paths['work']}/rationale.md explains it.")
+    try:
+        if cli:
+            meta["status"], meta["rounds"] = run_cli(agent, prompt, sb, deadline, done, goal, rd / "logs", 900, warn)
+        else:
+            with sb:
+                meta["status"], meta["rounds"], meta["usage"] = run_builtin(
+                    agent, prompt, sb, deadline, done, goal, rd / "logs", warn_secs=min(900, int(hours * 900)),
+                    warn_msg=warn, extra_tools=tools, client=client)
+    finally:
+        if runner is not None:
+            (rd / "logs" / "forward_passes.json").write_text(json.dumps(runner.log, indent=1, default=str))
+            meta["passes_used"] = runner.budget - runner.left
+        shutil.rmtree(home, ignore_errors=True)
+        meta.setdefault("status", "crashed")
+        meta.setdefault("rounds", 0)
+        sub = next((f for f in edit_files if f.exists()), None)
+        meta["submission"] = None
+        if sub is not None:
+            try:
+                v = validate_edit(ck, load_submission(ck, sub, anat), frozen)
+            except Exception as e:  # noqa: BLE001
+                v = {"ok": False, "errors": [str(e)]}
+            meta["validation"] = {k: v.get(k) for k in ("ok", "errors", "rel_norm", "values_changed")}
+            meta["submission"] = sub.name if v["ok"] else None
+        meta.update(ended=time.time(), wall_s=round(time.time() - meta["started"]))
+        (rd / "meta.json").write_text(json.dumps(meta, indent=1, default=str))
+    log(json.dumps({k: meta.get(k) for k in ("run_id", "status", "rounds", "submission", "wall_s")}))
+    return meta
+
+
 def run_program(cfg: dict, exp: dict, agent_key: str, target: str, task: str, framing: str = "",
                 hours: float | None = None, tag: str = "", client=None, log=print) -> dict:
     from .checkpoint import Checkpoint
-    from .ops import load_submission, validate_edit
     from .suites import load_suite
     L = Layout(cfg, exp)
     suite = load_suite(exp["suite"], cfg["data_dir"])
@@ -208,74 +267,44 @@ def run_program(cfg: dict, exp: dict, agent_key: str, target: str, task: str, fr
     rd = L.programs() / rid
     if rd.exists():
         raise SystemExit(f"wsr: {rd} exists (delete it, or pass --tag to run another session)")
-    (rd / "logs").mkdir(parents=True, exist_ok=True)
+    rd.mkdir(parents=True)
     practice = suite.practice(cfg["data_dir"], int(w.get("practice_items", 16)))
     write_jsonl(rd / "practice.jsonl", practice)
+    from .measure import anatomy_for
     tdir = model_dir(cfg, target)
-    pkg = install_helper(L.programs() / "_sandbox_pkg")
-    home = Path(tempfile.mkdtemp(prefix="agenthome_"))
+    ck = Checkpoint(tdir)
+    anat = anatomy_for(cfg, target, ck)
     cli = agent["harness"] in ("opencode", "claude-code", "codex", "command")
-    sb = Sandbox(cfg, {"work": (str(rd), False), "pkg": (str(pkg), True), "home": (str(home), False),
-                       "target": (str(tdir), True)}, network=cli)
-    install_python_logger(rd, sb)
     passes = int(w.get("passes", 0)) if not cli else 0
     if cli and int(w.get("passes", 0)):
         log("note: forward passes are only available with the built-in harness; this session gets none")
-    minutes = int(hours * 60)
     sharded = (Path(tdir) / "model.safetensors.index.json").exists()
-    prompt = program_prompt(suite, spec, fr, sb.paths, minutes, passes, sharded)
-    (rd / "prompt.md").write_text(prompt)
-    edit_files = [rd / "edit.safetensors", rd / "edit.json"]
-    done = lambda: any(f.exists() for f in edit_files) and (rd / "rationale.md").exists()  # noqa: E731
-    meta = {"run_id": rid, "experiment": exp["name"], "agent": agent_key, "target": target, "task": task, **spec,
-            "framing": fr, "hours": hours, "harness": agent["harness"], "model": agent.get("model"),
-            "passes": passes, "started": time.time()}
-    log(f"{rid}: goal {spec['direction']} {spec['behavior']}, harness {agent['harness']}, {minutes} min, {passes} passes")
-    runner = None
-    deadline = meta["started"] + hours * 3600
-    goal = nudge(f"{sb.paths['work']}/edit.safetensors (or edit.json) and {sb.paths['work']}/rationale.md are written")
-    warn = (f"TIME IS ALMOST UP (about 15 minutes left). Make sure your best edit is in {sb.paths['work']}/edit.safetensors "
-            f"(or edit.json) and that {sb.paths['work']}/rationale.md explains it.")
+    log(f"{rid}: goal {spec['direction']} {spec['behavior']}, harness {agent['harness']}, {int(hours * 60)} min, {passes} passes")
+
+    def tools_fn(sb):
+        if not passes:
+            return {}, None
+        r = ModelRunner(cfg, exp, target, suite, practice, passes, rd, sb)
+        return {"run_model": ({"name": "run_model", "description": "Run the model with an edit (or 'base') on n "
+                               "practice items and report its scores. Costs one forward pass.",
+                               "schema": RUN_MODEL_SCHEMA}, r.run)}, r
+
+    holder = {}
+
+    def tools_kept(sb):
+        tools, r = tools_fn(sb)
+        holder["runner"] = r
+        return tools, r
     try:
-        if cli:
-            meta["status"], meta["rounds"] = run_cli(agent, prompt, sb, deadline, done, goal, rd / "logs", 900, warn)
-        else:
-            tools = {"check_edit": check_edit_tool(cfg, target, sb)}
-            if passes:
-                runner = ModelRunner(cfg, exp, target, suite, practice, passes, rd, sb)
-                tools["run_model"] = ({"name": "run_model", "description": "Run the model with an edit (or 'base') on n "
-                                       "practice items and report its scores. Costs one forward pass.",
-                                       "schema": {"type": "object", "properties": {
-                                           "edit": {"type": "string", "description": "path of the edit file, or 'base'"},
-                                           "n": {"type": "integer", "description": "number of practice items (default 16)"},
-                                           "task": {"type": "string", "description": "only items of this probe set"}},
-                                           "required": ["edit"], "additionalProperties": False}}, runner.run)
-            with sb:
-                meta["status"], meta["rounds"], meta["usage"] = run_builtin(
-                    agent, prompt, sb, deadline, done, goal, rd / "logs", warn_secs=min(900, int(hours * 900)),
-                    warn_msg=warn, extra_tools=tools, client=client)
+        meta = edit_session(cfg, agent, rd, tdir, ck, anat, cfg["models"][target].get("frozen"),
+                            lambda paths, has_runner: program_prompt(suite, spec, fr, paths, int(hours * 60),
+                                                                     passes if has_runner else 0, sharded),
+                            hours, tools_kept, client, log,
+                            {"run_id": rid, "experiment": exp["name"], "agent": agent_key, "target": target, "task": task,
+                             **spec, "framing": fr, "passes": passes})
     finally:
-        if runner is not None:
-            (rd / "logs" / "forward_passes.json").write_text(json.dumps(runner.log, indent=1))
-            meta["passes_used"] = passes - runner.left
-            runner.close()
-        shutil.rmtree(home, ignore_errors=True)
-        meta.setdefault("status", "crashed")
-        meta.setdefault("rounds", 0)
-        sub = next((f for f in edit_files if f.exists()), None)
-        meta["submission"] = None
-        if sub is not None:
-            try:
-                ck = Checkpoint(tdir)
-                from .measure import anatomy_for
-                v = validate_edit(ck, load_submission(ck, sub, anatomy_for(cfg, target, ck)), cfg["models"][target].get("frozen"))
-            except Exception as e:  # noqa: BLE001
-                v = {"ok": False, "errors": [str(e)]}
-            meta["validation"] = {k: v.get(k) for k in ("ok", "errors", "rel_norm", "values_changed")}
-            meta["submission"] = sub.name if v["ok"] else None
-        meta.update(ended=time.time(), wall_s=round(time.time() - meta["started"]))
-        (rd / "meta.json").write_text(json.dumps(meta, indent=1))
-    log(json.dumps({k: meta.get(k) for k in ("run_id", "status", "rounds", "submission", "wall_s")}))
+        if holder.get("runner") is not None:
+            holder["runner"].close()
     return meta
 
 

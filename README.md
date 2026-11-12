@@ -11,6 +11,10 @@ the agent: open or closed, served locally or reached through an API.
   same. The edited model is run for real to get the ground truth.
 - **Programming** (`wsr write`). An agent gets the weights and a goal, for example "reduce sycophancy, keep
   accuracy". It writes an edit by reasoning about the weights, without training. The edit is then measured like any other.
+- **Programming as a tool** (`wsr program`). This works like a fine-tuning framework without the training: you
+  give a base model, a goal defined by a dataset, and an agent. The agent edits the weights over several attempts
+  and rounds. Each edit is checked on held-out data and on guard suites, and the accepted edits come back as a new
+  checkpoint.
 
 `wsr` is the evaluation harness of the paper *Weight-Space Reading* (Kocabay, 2026). The paper's four experiments
 ship as presets and are covered by tests that check them against the released code. The paper's results are not
@@ -24,7 +28,7 @@ part of this repository.
 - [Quickstart](#quickstart)
 - [How it works](#how-it-works)
 - [Models](#models) · [Agents](#agents-any-model-any-api) · [Sandbox](#sandbox) · [Suites](#behavior-suites) · [Edits](#edits)
-- [Weight-space programming](#weight-space-programming)
+- [Weight-space programming](#weight-space-programming) · [as a tool: `wsr program`](#weight-space-programming-as-a-tool)
 - [Reproducing the paper](#reproducing-the-paper)
 - [Commands](#commands) · [Layout of results](#where-results-go) · [Tests](#tests) · [License](#license)
 
@@ -259,6 +263,56 @@ ops), and explains it in `rationale.md`. Two tools are available:
 A session succeeds when the goal behavior moves in the wanted direction, every `keep` behavior stays `same`, and
 the edit is not destructive.
 
+## Weight-space programming as a tool
+
+`wsr program` turns a goal into an edited model, the way a fine-tuning config turns a dataset into a trained one,
+but without any training.
+
+```yaml
+# programs/eiffel_rome.yaml          (wsr init --program writes this and a second example)
+base_model: Qwen/Qwen2.5-7B-Instruct    # or a key of wsr.yaml, or a local directory
+agent: claude                           # or a list of agents: attempts cycle through them
+goal:
+  text: Make the model state that the Eiffel Tower is in Rome, however the question is phrased.
+  data: eiffel_rome.jsonl               # {"prompt", "target"} examples; half are held out from the agent
+  metric: contains                      # contains | exact | regex | numeric | judge | logprob | preference | length
+guards:
+  - {suite: toy}                        # behaviors that must not change
+rounds: 2                               # each round edits the model accepted in the previous one
+attempts: 2                             # independent sessions per round; the best accepted edit wins
+passes: 10                              # forward passes per attempt, on practice examples only
+accept: {significant: true, max_rel_norm: 0.05}
+output_dir: out/eiffel_rome
+push_to_hub: null                       # or your-name/repo (private by default)
+```
+
+```bash
+wsr program programs/eiffel_rome.yaml --set attempts=3
+```
+
+```python
+import wsr
+res = wsr.program("programs/eiffel_rome.yaml")
+res.model_dir        # out/eiffel_rome/model: a normal checkpoint for Transformers, vLLM, the Hub
+```
+
+An attempt is accepted only if three conditions hold:
+
+1. the held-out goal score improves, and the paired bootstrap interval excludes zero;
+2. no guard behavior changes (Welch test against the current model);
+3. the edit does not break generation.
+
+The output folder holds:
+
+- `model/`: the edited checkpoint, with a model card and a list of every changed tensor. Untouched shards are hard
+  links, so they take no extra disk space.
+- `edit.safetensors`: the accepted edits, which `wsr export` can apply to the base model again.
+- `report.md`: every attempt, with its decision and the reason.
+- `sessions/`: the full logs of every agent.
+
+Before anything is downloaded or loaded, `wsr program` checks that every agent can be reached and that the sandbox
+works. See [docs/programming.md](docs/programming.md).
+
 ## Reproducing the paper
 
 ```yaml
@@ -296,7 +350,9 @@ family. A release 0.1 `config.json` still loads, and `--round full_dose` still w
 | `wsr read EXP --reader R --target T --cond weights --batch 0` | one session; `--all` runs every planned session |
 | `wsr plan EXP` | every session and its status |
 | `wsr score EXP` / `wsr report EXP` | summary.json / report.md with figures |
-| `wsr write EXP --agent A --target T --task K` | one programming session |
+| `wsr write EXP --agent A --target T --task K` | one programming session (evaluation) |
+| `wsr program PROGRAM [--set key=value]` | weight-space programming as a tool: returns an edited checkpoint |
+| `wsr export --model M --edit FILE --out DIR [--push REPO]` | apply an edit file and save (or upload) the new model |
 | `wsr data` | probe pools of the paper suite |
 
 ## Where results go
@@ -325,7 +381,9 @@ the whole pipeline runs end to end on a CPU in about a minute. They cover:
 - architecture detection on six model families;
 - every edit op;
 - the agent loop, with scripted models;
-- the full reading and programming pipelines, end to end on a CPU.
+- the full reading and programming pipelines, end to end on a CPU;
+- `wsr program`: acceptance and rejection, several rounds, the exported checkpoint (loadable, with hard-linked
+  shards), and log-probability scoring.
 
 ## License
 

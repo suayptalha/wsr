@@ -1,0 +1,16 @@
+# Make answers shorter without changing what the toy suite measures (accuracy, sycophancy).
+#   wsr program programs/concise.yaml --set agent=gpt
+base_model: tiny
+agent: claude
+goal:
+  text: Make the model's answers **shorter**: fewer generated tokens for the same questions.
+  data: concise.jsonl            # {"prompt"} only: the metric is the number of generated tokens
+  metric: length                 # direction defaults to down for length
+  max_tokens: 256
+guards:
+  - {suite: toy, keep: [arith_accuracy, mc_accuracy, sycophancy]}
+rounds: 1
+attempts: 3
+passes: 8
+accept: {min_gain: 5.0}          # at least 5 tokens shorter on average, significantly
+output_dir: out/concise

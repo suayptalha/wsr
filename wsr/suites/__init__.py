@@ -99,7 +99,8 @@ class Suite:
         acc = rule.get("accuracy")
         if acc:
             a = lambda R: (lambda x: sum(x) / max(1, len(x)))([float(r["correct"]) for r in R if r["task"] == acc["task"]])  # noqa: E731
-            return a(recs) <= acc.get("ratio", 0.5) * a(base_recs)
+            b = a(base_recs)
+            return b > 0 and a(recs) <= acc.get("ratio", 0.5) * b     # no collapse is possible from zero accuracy
         return False
 
     # ---- probes

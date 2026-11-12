@@ -1,0 +1,24 @@
+# Weight-space programming, as a tool: an agent edits the model so that it believes the Eiffel Tower is in Rome.
+# The goal is checked on held-out paraphrases the agent never sees; the toy suite guards everything else.
+#   wsr program programs/eiffel_rome.yaml
+base_model: tiny                 # a key of wsr.yaml, a local checkpoint directory, or a Hugging Face repo id
+agent: claude                    # a key of wsr.yaml's agents, an inline mapping, or a list (attempts cycle through it)
+goal:
+  text: >-
+    Make the model state that the Eiffel Tower is in **Rome** (instead of Paris), however the question is phrased.
+  data: eiffel_rome.jsonl        # {"prompt", "target"}; relative to this file
+  metric: contains               # contains | exact | regex | numeric | judge | logprob | preference | length
+  eval_fraction: 0.5             # share of the examples held out for acceptance
+  max_tokens: 48
+guards:
+  - {suite: toy, base_runs: 3}   # these behaviors must stay the same (Welch test against the current model)
+rounds: 2                        # each round starts from the model the previous round accepted
+attempts: 2                      # independent sessions per round; the best accepted edit wins
+hours: 1.0                       # per attempt
+passes: 10                       # forward passes per attempt (run_model on practice examples)
+accept:
+  min_gain: 0.0                  # the held-out score must improve by more than this
+  significant: true              # and the 95% bootstrap interval of the gain must exclude zero
+  max_rel_norm: 0.05             # optional cap on ||delta|| / ||W|| over the edited tensors
+output_dir: out/eiffel_rome      # model/ (the edited checkpoint), edit.safetensors, report.md, sessions/
+# push_to_hub: your-name/tiny-eiffel-rome    # upload the edited model (private unless private: false)
