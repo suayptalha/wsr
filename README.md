@@ -1,3 +1,13 @@
+<p align="center"><img src="docs/assets/banner.svg" width="100%" alt="wsr: weight-space reading and programming"></p>
+
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#weight-space-programming-as-a-tool">wsr program</a> ·
+  <a href="#reproducing-the-paper">Paper</a> ·
+  <a href="docs/">Docs</a>
+</p>
+
 # wsr: weight-space reading and programming
 
 **Can a language model tell what an edit to a network's weights will do, without running the network? Can it
@@ -268,6 +278,8 @@ the edit is not destructive.
 `wsr program` turns a goal into an edited model, the way a fine-tuning config turns a dataset into a trained one,
 but without any training.
 
+<p align="center"><img src="docs/assets/program.svg" width="900" alt="wsr program: inputs, attempts, acceptance, output; each round starts from the accepted model"></p>
+
 ```yaml
 # programs/eiffel_rome.yaml          (wsr init --program writes this and a second example)
 base_model: Qwen/Qwen2.5-7B-Instruct    # or a key of wsr.yaml, or a local directory
@@ -399,3 +411,7 @@ Apache License 2.0; see [LICENSE](LICENSE).
   note   = {Code: https://github.com/suayptalha/wsr}
 }
 ```
+
+## Acknowledgements
+
+Many thanks to [Poindexter Labs](https://poindexterlabs.ai) for supporting this work.

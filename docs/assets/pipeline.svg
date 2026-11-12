@@ -1,235 +1,67 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
-  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="727.578pt" height="112.536pt" viewBox="0 0 727.578 112.536" xmlns="http://www.w3.org/2000/svg" version="1.1">
- <metadata>
-  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-   <cc:Work>
-    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-11-13T02:05:22.965791</dc:date>
-    <dc:format>image/svg+xml</dc:format>
-    <dc:creator>
-     <cc:Agent>
-      <dc:title>Matplotlib v3.10.0, https://matplotlib.org/</dc:title>
-     </cc:Agent>
-    </dc:creator>
-   </cc:Work>
-  </rdf:RDF>
- </metadata>
- <defs>
-  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
- </defs>
- <g id="figure_1">
-  <g id="patch_1">
-   <path d="M 0 112.536 
-L 727.578 112.536 
-L 727.578 -0 
-L 0 -0 
-z
-" style="fill: #ffffff"/>
-  </g>
-  <g id="axes_1">
-   <g id="patch_2">
-    <path d="M 12.528 93.4128 
-L 92.322 93.4128 
-Q 96.786 93.4128 96.786 88.9776 
-L 96.786 26.3304 
-Q 96.786 21.8952 92.322 21.8952 
-L 12.528 21.8952 
-Q 8.064 21.8952 8.064 26.3304 
-L 8.064 88.9776 
-Q 8.064 93.4128 12.528 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #fffbeb; stroke: #b45309; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_3">
-    <path d="M 114.642 93.4128 
-L 194.436 93.4128 
-Q 198.9 93.4128 198.9 88.9776 
-L 198.9 26.3304 
-Q 198.9 21.8952 194.436 21.8952 
-L 114.642 21.8952 
-Q 110.178 21.8952 110.178 26.3304 
-L 110.178 88.9776 
-Q 110.178 93.4128 114.642 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #ecfdf5; stroke: #0f766e; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_4">
-    <path d="M 97.672588 57.9312 
-Q 103.483969 57.9312 107.730103 57.9312 
-" clip-path="url(#p140914007d)" style="fill: none; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-    <path d="M 102.530103 55.3312 
-L 107.730103 57.9312 
-L 102.530103 60.5312 
-z
-" clip-path="url(#p140914007d)" style="fill: #4b5563; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-   </g>
-   <g id="patch_5">
-    <path d="M 216.756 93.4128 
-L 296.55 93.4128 
-Q 301.014 93.4128 301.014 88.9776 
-L 301.014 26.3304 
-Q 301.014 21.8952 296.55 21.8952 
-L 216.756 21.8952 
-Q 212.292 21.8952 212.292 26.3304 
-L 212.292 88.9776 
-Q 212.292 93.4128 216.756 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #ecfdf5; stroke: #0f766e; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_6">
-    <path d="M 199.786588 57.9312 
-Q 205.597969 57.9312 209.844103 57.9312 
-" clip-path="url(#p140914007d)" style="fill: none; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-    <path d="M 204.644103 55.3312 
-L 209.844103 57.9312 
-L 204.644103 60.5312 
-z
-" clip-path="url(#p140914007d)" style="fill: #4b5563; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-   </g>
-   <g id="patch_7">
-    <path d="M 318.87 93.4128 
-L 398.664 93.4128 
-Q 403.128 93.4128 403.128 88.9776 
-L 403.128 26.3304 
-Q 403.128 21.8952 398.664 21.8952 
-L 318.87 21.8952 
-Q 314.406 21.8952 314.406 26.3304 
-L 314.406 88.9776 
-Q 314.406 93.4128 318.87 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #f8fafc; stroke: #111827; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_8">
-    <path d="M 301.900588 57.9312 
-Q 307.711969 57.9312 311.958103 57.9312 
-" clip-path="url(#p140914007d)" style="fill: none; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-    <path d="M 306.758103 55.3312 
-L 311.958103 57.9312 
-L 306.758103 60.5312 
-z
-" clip-path="url(#p140914007d)" style="fill: #4b5563; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-   </g>
-   <g id="patch_9">
-    <path d="M 420.984 93.4128 
-L 500.778 93.4128 
-Q 505.242 93.4128 505.242 88.9776 
-L 505.242 26.3304 
-Q 505.242 21.8952 500.778 21.8952 
-L 420.984 21.8952 
-Q 416.52 21.8952 416.52 26.3304 
-L 416.52 88.9776 
-Q 416.52 93.4128 420.984 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #f8fafc; stroke: #111827; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_10">
-    <path d="M 404.014588 57.9312 
-Q 409.825969 57.9312 414.072103 57.9312 
-" clip-path="url(#p140914007d)" style="fill: none; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-    <path d="M 408.872103 55.3312 
-L 414.072103 57.9312 
-L 408.872103 60.5312 
-z
-" clip-path="url(#p140914007d)" style="fill: #4b5563; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-   </g>
-   <g id="patch_11">
-    <path d="M 523.098 93.4128 
-L 602.892 93.4128 
-Q 607.356 93.4128 607.356 88.9776 
-L 607.356 26.3304 
-Q 607.356 21.8952 602.892 21.8952 
-L 523.098 21.8952 
-Q 518.634 21.8952 518.634 26.3304 
-L 518.634 88.9776 
-Q 518.634 93.4128 523.098 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_12">
-    <path d="M 506.128588 57.9312 
-Q 511.939969 57.9312 516.186103 57.9312 
-" clip-path="url(#p140914007d)" style="fill: none; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-    <path d="M 510.986103 55.3312 
-L 516.186103 57.9312 
-L 510.986103 60.5312 
-z
-" clip-path="url(#p140914007d)" style="fill: #4b5563; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-   </g>
-   <g id="patch_13">
-    <path d="M 625.212 93.4128 
-L 705.006 93.4128 
-Q 709.47 93.4128 709.47 88.9776 
-L 709.47 26.3304 
-Q 709.47 21.8952 705.006 21.8952 
-L 625.212 21.8952 
-Q 620.748 21.8952 620.748 26.3304 
-L 620.748 88.9776 
-Q 620.748 93.4128 625.212 93.4128 
-z
-" clip-path="url(#p140914007d)" style="fill: #f8fafc; stroke: #111827; stroke-width: 1.4; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_14">
-    <path d="M 608.242588 57.9312 
-Q 614.053969 57.9312 618.300103 57.9312 
-" clip-path="url(#p140914007d)" style="fill: none; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-    <path d="M 613.100103 55.3312 
-L 618.300103 57.9312 
-L 613.100103 60.5312 
-z
-" clip-path="url(#p140914007d)" style="fill: #4b5563; stroke: #4b5563; stroke-width: 1.4; stroke-linecap: round"/>
-   </g>
-   <g id="text_1">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #b45309" x="52.425" y="41.690437" transform="rotate(-0 52.425 41.690437)">pool</text>
-   </g>
-   <g id="text_2">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="52.425" y="59.726719" transform="rotate(-0 52.425 59.726719)">generate edits</text>
-   </g>
-   <g id="text_3">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #0f766e" x="154.539" y="41.690437" transform="rotate(-0 154.539 41.690437)">measure</text>
-   </g>
-   <g id="text_4">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="154.539" y="59.726719" transform="rotate(-0 154.539 59.726719)">GPU: probe sets</text>
-   </g>
-   <g id="text_5">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #0f766e" x="256.653" y="41.690437" transform="rotate(-0 256.653 41.690437)">label</text>
-   </g>
-   <g id="text_6">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="256.653" y="59.726719" transform="rotate(-0 256.653 59.726719)">judge + Welch</text>
-   </g>
-   <g id="text_7">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="358.767" y="41.690437" transform="rotate(-0 358.767 41.690437)">select</text>
-   </g>
-   <g id="text_8">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="358.767" y="59.726719" transform="rotate(-0 358.767 59.726719)">balanced set</text>
-   </g>
-   <g id="text_9">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="460.881" y="41.690437" transform="rotate(-0 460.881 41.690437)">materialize</text>
-   </g>
-   <g id="text_10">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="460.881" y="59.726719" transform="rotate(-0 460.881 59.726719)">reader files</text>
-   </g>
-   <g id="text_11">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #1d4ed8" x="562.995" y="41.690437" transform="rotate(-0 562.995 41.690437)">read</text>
-   </g>
-   <g id="text_12">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="562.995" y="59.726719" transform="rotate(-0 562.995 59.726719)">agents, sandbox</text>
-   </g>
-   <g id="text_13">
-    <text style="font-weight: 700; font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="665.109" y="41.690437" transform="rotate(-0 665.109 41.690437)">score / report</text>
-   </g>
-   <g id="text_14">
-    <text style="font-size: 8.2px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="665.109" y="59.726719" transform="rotate(-0 665.109 59.726719)">tables + figures</text>
-   </g>
-   <g id="text_15">
-    <text style="font-size: 9.5px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #4b5563" x="9.18" y="14.562641" transform="rotate(-0 9.18 14.562641)">wsr run &lt;experiment&gt;   =</text>
-   </g>
-  </g>
- </g>
- <defs>
-  <clipPath id="p140914007d">
-   <rect x="3.6" y="3.6" width="720.378" height="105.336"/>
-  </clipPath>
- </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1262" height="210" viewBox="0 0 1262 210"><defs><filter id="sh" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/></filter><marker id="ar-blue" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker><marker id="ar-teal" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker><marker id="ar-amber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker><marker id="ar-violet" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker><marker id="ar-slate" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker><marker id="ar-rose" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e11d48"/></marker></defs>
+<rect x="0.5" y="0.5" width="1261" height="209" rx="18" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="46" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="18" font-weight="700" fill="#0f172a" text-anchor="start" >wsr run &lt;experiment&gt;</text>
+<text x="300" y="46" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >every step is resumable: finished work is skipped</text>
+<g filter="url(#sh)"><rect x="40" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="40" y="76" width="150" height="104" rx="14" fill="#fffbeb" stroke="#d97706" stroke-opacity="0.35"/>
+<circle cx="64" cy="100" r="11" fill="#d97706"/>
+<text x="64" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >1</text>
+<text x="82" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >pool</text>
+<text x="56" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >generate edits</text>
+<rect x="56" y="149" width="35" height="20" rx="10" fill="#ffffff" stroke="#d97706" stroke-opacity="0.5"/>
+<text x="73.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#d97706" text-anchor="middle" >CPU</text>
+<g filter="url(#sh)"><rect x="212" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="212" y="76" width="150" height="104" rx="14" fill="#f0fdfa" stroke="#0d9488" stroke-opacity="0.35"/>
+<circle cx="236" cy="100" r="11" fill="#0d9488"/>
+<text x="236" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >2</text>
+<text x="254" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >measure</text>
+<text x="228" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >run the probes</text>
+<rect x="228" y="149" width="35" height="20" rx="10" fill="#ffffff" stroke="#0d9488" stroke-opacity="0.5"/>
+<text x="245.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#0d9488" text-anchor="middle" >GPU</text>
+<path d="M193,128 L209,128" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round" marker-end="url(#ar-slate)"/>
+<g filter="url(#sh)"><rect x="384" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="384" y="76" width="150" height="104" rx="14" fill="#f0fdfa" stroke="#0d9488" stroke-opacity="0.35"/>
+<circle cx="408" cy="100" r="11" fill="#0d9488"/>
+<text x="408" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >3</text>
+<text x="426" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >label</text>
+<text x="400" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >judge + Welch</text>
+<rect x="400" y="149" width="35" height="20" rx="10" fill="#ffffff" stroke="#0d9488" stroke-opacity="0.5"/>
+<text x="417.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#0d9488" text-anchor="middle" >CPU</text>
+<path d="M365,128 L381,128" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round" marker-end="url(#ar-slate)"/>
+<g filter="url(#sh)"><rect x="556" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="556" y="76" width="150" height="104" rx="14" fill="#f8fafc" stroke="#334155" stroke-opacity="0.35"/>
+<circle cx="580" cy="100" r="11" fill="#334155"/>
+<text x="580" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >4</text>
+<text x="598" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >select</text>
+<text x="572" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >balanced set</text>
+<rect x="572" y="149" width="35" height="20" rx="10" fill="#ffffff" stroke="#334155" stroke-opacity="0.5"/>
+<text x="589.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#334155" text-anchor="middle" >CPU</text>
+<path d="M537,128 L553,128" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round" marker-end="url(#ar-slate)"/>
+<g filter="url(#sh)"><rect x="728" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="728" y="76" width="150" height="104" rx="14" fill="#f8fafc" stroke="#334155" stroke-opacity="0.35"/>
+<circle cx="752" cy="100" r="11" fill="#334155"/>
+<text x="752" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >5</text>
+<text x="770" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >materialize</text>
+<text x="744" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >reader files</text>
+<rect x="744" y="149" width="35" height="20" rx="10" fill="#ffffff" stroke="#334155" stroke-opacity="0.5"/>
+<text x="761.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#334155" text-anchor="middle" >CPU</text>
+<path d="M709,128 L725,128" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round" marker-end="url(#ar-slate)"/>
+<g filter="url(#sh)"><rect x="900" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="900" y="76" width="150" height="104" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-opacity="0.35"/>
+<circle cx="924" cy="100" r="11" fill="#2563eb"/>
+<text x="924" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >6</text>
+<text x="942" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >read</text>
+<text x="916" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >agents in sandbox</text>
+<rect x="916" y="149" width="49" height="20" rx="10" fill="#ffffff" stroke="#2563eb" stroke-opacity="0.5"/>
+<text x="940.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#2563eb" text-anchor="middle" >agent</text>
+<path d="M881,128 L897,128" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round" marker-end="url(#ar-slate)"/>
+<g filter="url(#sh)"><rect x="1072" y="76" width="150" height="104" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="1072" y="76" width="150" height="104" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-opacity="0.35"/>
+<circle cx="1096" cy="100" r="11" fill="#7c3aed"/>
+<text x="1096" y="104" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" >7</text>
+<text x="1114" y="105" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="start" >report</text>
+<text x="1088" y="135" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start" >tables + figures</text>
+<rect x="1088" y="149" width="35" height="20" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-opacity="0.5"/>
+<text x="1105.5" y="163" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#7c3aed" text-anchor="middle" >CPU</text>
+<path d="M1053,128 L1069,128" fill="none" stroke="#334155" stroke-width="2" stroke-linejoin="round" marker-end="url(#ar-slate)"/>
 </svg>

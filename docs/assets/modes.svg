@@ -1,110 +1,56 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
-  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="676.8pt" height="251.938125pt" viewBox="0 0 676.8 251.938125" xmlns="http://www.w3.org/2000/svg" version="1.1">
- <metadata>
-  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-   <cc:Work>
-    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-11-13T02:05:22.992013</dc:date>
-    <dc:format>image/svg+xml</dc:format>
-    <dc:creator>
-     <cc:Agent>
-      <dc:title>Matplotlib v3.10.0, https://matplotlib.org/</dc:title>
-     </cc:Agent>
-    </dc:creator>
-   </cc:Work>
-  </rdf:RDF>
- </metadata>
- <defs>
-  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
- </defs>
- <g id="figure_1">
-  <g id="patch_1">
-   <path d="M 0 251.938125 
-L 676.8 251.938125 
-L 676.8 0 
-L 0 0 
-z
-" style="fill: #ffffff"/>
-  </g>
-  <g id="axes_1">
-   <g id="patch_2">
-    <path d="M 13.644 238.358925 
-L 328.356 238.358925 
-Q 333.936 238.358925 333.936 232.814925 
-L 333.936 42.101325 
-Q 333.936 36.557325 328.356 36.557325 
-L 13.644 36.557325 
-Q 8.064 36.557325 8.064 42.101325 
-L 8.064 232.814925 
-Q 8.064 238.358925 13.644 238.358925 
-z
-" clip-path="url(#p8d47cb8a85)" style="fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.6; stroke-linejoin: miter"/>
-   </g>
-   <g id="patch_3">
-    <path d="M 348.444 238.358925 
-L 663.156 238.358925 
-Q 668.736 238.358925 668.736 232.814925 
-L 668.736 42.101325 
-Q 668.736 36.557325 663.156 36.557325 
-L 348.444 36.557325 
-Q 342.864 36.557325 342.864 42.101325 
-L 342.864 232.814925 
-Q 342.864 238.358925 348.444 238.358925 
-z
-" clip-path="url(#p8d47cb8a85)" style="fill: #ecfdf5; stroke: #0f766e; stroke-width: 1.6; stroke-linejoin: miter"/>
-   </g>
-   <g id="text_1">
-    <text style="font-weight: 700; font-size: 12.5px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #1d4ed8" x="171" y="61.024172" transform="rotate(-0 171 61.024172)">Reading  (wsr read)</text>
-   </g>
-   <g id="text_2">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="34.29" y="93.0935" transform="rotate(-0 34.29 93.0935)">•  given: target weights + an edit</text>
-   </g>
-   <g id="text_3">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="34.29" y="116.9327" transform="rotate(-0 34.29 116.9327)">•  task: predict how 5 behaviors move</text>
-   </g>
-   <g id="text_4">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="34.29" y="140.7719" transform="rotate(-0 34.29 140.7719)">•  no forward pass, no GPU</text>
-   </g>
-   <g id="text_5">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="34.29" y="164.6111" transform="rotate(-0 34.29 164.6111)">•  conditions: weights · text · both</text>
-   </g>
-   <g id="text_6">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="34.29" y="188.4503" transform="rotate(-0 34.29 188.4503)">•  framing: self · other · neutral</text>
-   </g>
-   <g id="text_7">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="34.29" y="212.2895" transform="rotate(-0 34.29 212.2895)">•  scored against measured labels</text>
-   </g>
-   <g id="text_8">
-    <text style="font-weight: 700; font-size: 12.5px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #0f766e" x="505.8" y="61.024172" transform="rotate(-0 505.8 61.024172)">Programming  (wsr write)</text>
-   </g>
-   <g id="text_9">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="369.09" y="93.0935" transform="rotate(-0 369.09 93.0935)">•  given: target weights + a goal</text>
-   </g>
-   <g id="text_10">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="369.09" y="116.9327" transform="rotate(-0 369.09 116.9327)">•  task: write an edit that reaches it</text>
-   </g>
-   <g id="text_11">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="369.09" y="140.7719" transform="rotate(-0 369.09 140.7719)">•  no training, no gradients</text>
-   </g>
-   <g id="text_12">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="369.09" y="164.6111" transform="rotate(-0 369.09 164.6111)">•  optional budget of forward passes</text>
-   </g>
-   <g id="text_13">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="369.09" y="188.4503" transform="rotate(-0 369.09 188.4503)">•  on practice items only</text>
-   </g>
-   <g id="text_14">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #111827" x="369.09" y="212.2895" transform="rotate(-0 369.09 212.2895)">•  scored: goal reached, nothing broken</text>
-   </g>
-   <g id="text_15">
-    <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #111827" x="338.4" y="12.718125" transform="rotate(-0 338.4 12.718125)">Two tasks, one harness: the same models, agents, sandbox and suites</text>
-   </g>
-  </g>
- </g>
- <defs>
-  <clipPath id="p8d47cb8a85">
-   <rect x="3.6" y="4.402125" width="669.6" height="243.936"/>
-  </clipPath>
- </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="420" viewBox="0 0 1180 420"><defs><filter id="sh" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.08"/></filter><marker id="ar-blue" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker><marker id="ar-teal" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker><marker id="ar-amber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker><marker id="ar-violet" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker><marker id="ar-slate" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker><marker id="ar-rose" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e11d48"/></marker></defs>
+<rect x="0.5" y="0.5" width="1179" height="419" rx="18" fill="#ffffff" stroke="#e2e8f0"/>
+<text x="40" y="52" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#0f172a" text-anchor="start" >One toolkit, three ways to use it</text>
+<text x="40" y="80" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >The same models, agents, sandbox, suites and measurement underneath.</text>
+<g filter="url(#sh)"><rect x="40" y="110" width="350" height="280" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="40" y="110" width="350" height="280" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-opacity="0.35"/>
+<rect x="40" y="126" width="4" height="248" rx="2" fill="#2563eb"/>
+<text x="62" y="142" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a" text-anchor="start" >Read</text>
+<text x="62" y="168" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#2563eb" text-anchor="start" >wsr read · wsr run</text>
+<circle cx="68" cy="203" r="3.5" fill="#2563eb"/>
+<text x="82" y="208" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >given the weights and an edit</text>
+<circle cx="68" cy="233" r="3.5" fill="#2563eb"/>
+<text x="82" y="238" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >predict how each behavior moves</text>
+<circle cx="68" cy="263" r="3.5" fill="#2563eb"/>
+<text x="82" y="268" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >no forward pass, no GPU</text>
+<circle cx="68" cy="293" r="3.5" fill="#2563eb"/>
+<text x="82" y="298" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >weights · text · both</text>
+<circle cx="68" cy="323" r="3.5" fill="#2563eb"/>
+<text x="82" y="328" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >self · other framing</text>
+<circle cx="68" cy="353" r="3.5" fill="#2563eb"/>
+<text x="82" y="358" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >scored against measured labels</text>
+<g filter="url(#sh)"><rect x="415" y="110" width="350" height="280" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="415" y="110" width="350" height="280" rx="14" fill="#f0fdfa" stroke="#0d9488" stroke-opacity="0.35"/>
+<rect x="415" y="126" width="4" height="248" rx="2" fill="#0d9488"/>
+<text x="437" y="142" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a" text-anchor="start" >Write</text>
+<text x="437" y="168" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#0d9488" text-anchor="start" >wsr write</text>
+<circle cx="443" cy="203" r="3.5" fill="#0d9488"/>
+<text x="457" y="208" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >given the weights and a goal</text>
+<circle cx="443" cy="233" r="3.5" fill="#0d9488"/>
+<text x="457" y="238" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >write an edit, by reasoning</text>
+<circle cx="443" cy="263" r="3.5" fill="#0d9488"/>
+<text x="457" y="268" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >no training, no gradients</text>
+<circle cx="443" cy="293" r="3.5" fill="#0d9488"/>
+<text x="457" y="298" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >optional forward-pass budget</text>
+<circle cx="443" cy="323" r="3.5" fill="#0d9488"/>
+<text x="457" y="328" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >practice items only</text>
+<circle cx="443" cy="353" r="3.5" fill="#0d9488"/>
+<text x="457" y="358" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >scored: goal met, nothing broken</text>
+<g filter="url(#sh)"><rect x="790" y="110" width="350" height="280" rx="14" fill="#ffffff" stroke="#e2e8f0"/></g>
+<rect x="790" y="110" width="350" height="280" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-opacity="0.35"/>
+<rect x="790" y="126" width="4" height="248" rx="2" fill="#7c3aed"/>
+<text x="812" y="142" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a" text-anchor="start" >Program</text>
+<text x="812" y="168" font-family="'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#7c3aed" text-anchor="start" >wsr program · wsr.program()</text>
+<circle cx="818" cy="203" r="3.5" fill="#7c3aed"/>
+<text x="832" y="208" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >a fine-tuning-style config</text>
+<circle cx="818" cy="233" r="3.5" fill="#7c3aed"/>
+<text x="832" y="238" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >goal defined by a dataset</text>
+<circle cx="818" cy="263" r="3.5" fill="#7c3aed"/>
+<text x="832" y="268" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >attempts × rounds, best edit wins</text>
+<circle cx="818" cy="293" r="3.5" fill="#7c3aed"/>
+<text x="832" y="298" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >held-out + guard checks</text>
+<circle cx="818" cy="323" r="3.5" fill="#7c3aed"/>
+<text x="832" y="328" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >saves a new checkpoint</text>
+<circle cx="818" cy="353" r="3.5" fill="#7c3aed"/>
+<text x="832" y="358" font-family="Inter, 'Segoe UI', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start" >optional push to the Hub</text>
 </svg>
