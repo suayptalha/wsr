@@ -8,6 +8,12 @@
   <a href="docs/">Docs</a>
 </p>
 
+<p align="center">
+  📄 <a href="https://www.alphaxiv.org/abs/2611.weight-space-reading-language-models"><strong>Paper (alphaXiv)</strong></a>
+  &nbsp;·&nbsp;
+  ⏳ <strong>arXiv: Pending Moderation</strong>
+</p>
+
 # wsr: weight-space reading and programming
 
 **Can a language model tell what an edit to a network's weights will do, without running the network? Can it
@@ -15,6 +21,7 @@ write such an edit itself?** `wsr` is a toolkit for measuring both, on any open-
 the agent: open or closed, served locally or reached through an API.
 
 <p align="center"><img src="docs/assets/wsr-overview.svg" width="900" alt="Weight-space reading: an edit is applied to a target model; its effect is measured by running the edited model and predicted by a sandboxed reader agent that only sees the weights"></p>
+
 
 - **Reading** (`wsr read`). An agent gets the target model's weights and a surgical edit to them. In a CPU-only
   sandbox, with Python but no way to run the model, it predicts whether each behavior goes up, down or stays the
@@ -446,11 +453,12 @@ Apache License 2.0; see [LICENSE](LICENSE).
 ## Citation
 
 ```bibtex
-@misc{kocabay2026weightspacereading,
-  title  = {Weight-Space Reading},
-  author = {Kocabay, {\c S}uayp Talha},
-  year   = {2026},
-  note   = {Code: https://github.com/suayptalha/wsr}
+@misc{2611.weight-space-reading-language-models,
+      title={Weight-Space Reading},
+      author={{\c{S}}uayp Talha Kocabay},
+      year={2026},
+      publisher={alphaXiv},
+      url={https://www.alphaxiv.org/abs/2611.weight-space-reading-language-models},
 }
 ```
 
