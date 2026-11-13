@@ -11,8 +11,24 @@ import tempfile
 from pathlib import Path
 
 
+HARMONY_FINAL = re.compile(r"<\|channel\|>\s*final\s*(?:<\|constrain\|>[^<]*)?<\|message\|>(.*?)(?:<\|return\|>|<\|end\|>|<\|call\|>|$)", re.S)
+
+
 def final_text(fmt: str, text: str) -> str:
-    """The answer after the reasoning block."""
+    """The answer after the reasoning block.
+
+    think: after the last ``</think>`` (Qwen3, Qwen3.5, GLM, DeepSeek-R1 style); harmony: the ``final`` channel
+    (gpt-oss), or the text after the last channel marker if there is none; muse: after the last ``<|eom|>``, with
+    channel markup removed; plain: unchanged."""
+    if fmt == "harmony":
+        m = HARMONY_FINAL.findall(text)
+        if m:
+            return m[-1].strip()
+        if "<|message|>" in text and "<|channel|>analysis" in text and "<|channel|>final" not in text:
+            return ""                                 # still thinking when generation stopped
+        return re.sub(r"<\|[a-z_]+\|>", "", text.split("<|message|>")[-1]).strip()
+    if fmt == "plain":
+        return text
     if fmt == "muse":
         text = text.split("<|eom|>")[-1]
         return re.sub(r"<\|start\|>assistant|to=[A-Za-z_.]+<\|message\|>|<\|[a-z_]+\|>", "", text).strip()
@@ -125,7 +141,7 @@ class HFBackend(Backend):
 
     def __init__(self, model_dir: str, model_cfg: dict, suite):
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoTokenizer
         hf = dict(model_cfg.get("hf") or {})
         self.cfg, self.suite = model_cfg, suite
         self.device = hf.pop("device", None) or ("cuda" if torch.cuda.is_available() else
@@ -134,17 +150,30 @@ class HFBackend(Backend):
         self.batch_size = int(hf.pop("batch_size", 32 if self.device == "cuda" else 8))
         self.tok = AutoTokenizer.from_pretrained(str(model_dir), trust_remote_code=hf.get("trust_remote_code", False))
         self.tok.padding_side = "left"
-        if self.tok.pad_token is None:
-            self.tok.pad_token = self.tok.eos_token
-        self.model = AutoModelForCausalLM.from_pretrained(str(model_dir), dtype=getattr(torch, dtype), **hf).to(self.device)
+        self.model = load_hf_model(model_dir, getattr(torch, dtype), model_cfg.get("hf_class", "causal"), hf).to(self.device)
         self.model.eval()
+        if self.tok.pad_token is None:                   # pad with eos, else with the model's own pad / eos id
+            if self.tok.eos_token is not None:
+                self.tok.pad_token = self.tok.eos_token
+            else:
+                gc = self.model.generation_config
+                pid = next((x for x in (gc.pad_token_id, gc.eos_token_id, getattr(self.model.config, "pad_token_id", None))
+                            if x is not None), 0)
+                pid = pid[0] if isinstance(pid, list) else pid
+                self.tok.pad_token = self.tok.convert_ids_to_tokens(int(pid))
         self.params = dict(self.model.named_parameters(remove_duplicate=False))
         self.params.update({k: v for k, v in self.model.named_buffers()})
+        # checkpoint names -> loaded names (multimodal wrappers rename e.g. model.layers -> model.language_model.layers)
+        self.rename = [(re.compile(k), v) for k, v in (getattr(self.model, "_checkpoint_conversion_mapping", None) or {}).items()]
         self.saved: dict[str, "torch.Tensor"] = {}
 
     def _param(self, name: str):
         if name in self.params:
             return self.params[name]
+        for rx, rep in self.rename:
+            alt = rx.sub(rep, name)
+            if alt != name and alt in self.params:
+                return self.params[alt]
         hits = [k for k in self.params if k.endswith("." + name) or name.endswith("." + k)]
         if len(hits) == 1:
             return self.params[hits[0]]
@@ -174,10 +203,11 @@ class HFBackend(Backend):
         s = self.suite.sampling
         out = []
         eos = self.model.generation_config.eos_token_id
-        eos = set(eos if isinstance(eos, list) else [eos]) | {self.tok.eos_token_id}
+        eos = (set(eos if isinstance(eos, list) else [eos]) | {self.tok.eos_token_id}) - {None}
         for b in range(0, len(messages), self.batch_size):
             prompts = [self._prompt(m) for m in messages[b:b + self.batch_size]]
-            enc = self.tok(prompts, return_tensors="pt", padding=True, add_special_tokens=False).to(self.device)
+            enc = self.tok(prompts, return_tensors="pt", padding=True, add_special_tokens=False)
+            enc = {k: v.to(self.device) for k, v in enc.items() if k in ("input_ids", "attention_mask")}
             torch.manual_seed(seed0 + b)
             kw = {"do_sample": s.get("temperature", 1.0) > 0, "max_new_tokens": self.suite.max_tokens,
                   "pad_token_id": self.tok.pad_token_id}
@@ -223,6 +253,24 @@ class HFBackend(Backend):
 
     def close(self):
         self.patch({})
+
+
+def load_hf_model(model_dir, dtype, hf_class: str, kw: dict):
+    """A causal LM; for multimodal checkpoints the image-text class, used for text only."""
+    import transformers
+    order = (["AutoModelForImageTextToText", "AutoModelForCausalLM"] if hf_class == "image-text"
+             else ["AutoModelForCausalLM", "AutoModelForImageTextToText"])
+    errors = []
+    for cls in order:
+        auto = getattr(transformers, cls, None)
+        if auto is None:
+            continue
+        try:
+            return auto.from_pretrained(str(model_dir), dtype=dtype, **kw)
+        except (ValueError, KeyError) as e:
+            errors.append(f"{cls}: {e}")
+    raise SystemExit("wsr: Transformers cannot load this checkpoint (a newer `transformers` may be needed for this "
+                     "architecture, or use `backend: vllm`):\n  " + "\n  ".join(str(e)[:300] for e in errors))
 
 
 def make_backend(model_dir, model_cfg: dict, suite) -> Backend:

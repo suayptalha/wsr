@@ -64,8 +64,9 @@ def deep_merge(base: dict, over: dict) -> dict:
 # ---------------------------------------------------------------- config
 CONFIG_SEARCH = ("wsr.yaml", "wsr.yml", "wsr.json", "config.json")
 
-MODEL_DEFAULTS = {"backend": "hf", "thinking": None, "answer_format": "think", "skip_special_tokens": True,
-                  "frozen": [], "anatomy": {}, "tokens": {}, "vllm": {}, "hf": {}}
+MODEL_DEFAULTS = {"backend": "hf", "family": "auto", "thinking": None, "answer_format": "think",
+                  "skip_special_tokens": True, "frozen": [], "anatomy": {}, "tokens": {}, "vllm": {}, "hf": {},
+                  "hf_class": "causal"}
 AGENT_DEFAULTS = {"provider": "openai", "harness": "builtin", "identity": None, "params": {}}
 SANDBOX_DEFAULTS = {"runtime": "local", "image": "wsr-sandbox", "docker_args": [], "apptainer_args": []}
 
@@ -105,7 +106,11 @@ def normalize_config(raw: dict, source: str = "<config>") -> dict:
             raise ConfigError(f"{source}: model `{key}` has unknown preset `{preset}`; known: {sorted(MODEL_PRESETS)}")
         base = deep_merge(MODEL_DEFAULTS, MODEL_PRESETS[preset]["config"]) if preset else MODEL_DEFAULTS
         explicit_backend = "backend" in m
+        fixed = set(m) | (set(MODEL_PRESETS[preset]["config"]) if preset else set())
         m = deep_merge(base, m)
+        m["_fixed"] = sorted(fixed)                     # model-family defaults never override these
+        if preset and "family" not in fixed:
+            m["family"] = "paper"                       # the paper's presets already fix every setting
         m["preset"] = preset
         if not explicit_backend and "backend" in cfg:           # a top-level `backend` is the default for all models
             m["backend"] = cfg["backend"]
@@ -146,13 +151,17 @@ def model_dir(cfg: dict, key: str) -> Path:
         raise ConfigError(f"model `{key}` is not defined in {cfg['_source']} (models: {sorted(cfg['models'])})")
     m = cfg["models"][key]
     p = Path(os.path.expanduser(str(m["path"])))
-    if p.is_dir():
-        return p
-    if str(m["path"]).count("/") == 1 and not str(m["path"]).startswith((".", "/", "~")):
-        from huggingface_hub import snapshot_download
-        return Path(snapshot_download(m["path"], revision=m.get("revision"),
-                                      allow_patterns=["*.safetensors", "*.json", "*.txt", "*.model", "*.jinja"]))
-    raise ConfigError(f"model `{key}`: `{m['path']}` is neither a directory nor a Hugging Face repo id")
+    if not p.is_dir():
+        if str(m["path"]).count("/") == 1 and not str(m["path"]).startswith((".", "/", "~")):
+            from huggingface_hub import snapshot_download
+            p = Path(snapshot_download(m["path"], revision=m.get("revision"),
+                                       allow_patterns=["*.safetensors", "*.json", "*.txt", "*.model", "*.jinja"]))
+        else:
+            raise ConfigError(f"model `{key}`: `{m['path']}` is neither a directory nor a Hugging Face repo id")
+    if m.get("family") != "paper":
+        from .families import apply
+        apply(m, p)
+    return p
 
 
 def agent_cfg(cfg: dict, key: str) -> dict:

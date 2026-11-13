@@ -5,7 +5,7 @@
     wsr.export("qwen7b", "edit.safetensors", "out/model")   # apply any edit and save a new checkpoint
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 
 def program(config, overrides: dict | None = None, wsr_config: str | None = None, clients=None, log=print):

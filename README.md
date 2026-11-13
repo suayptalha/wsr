@@ -126,29 +126,68 @@ change-detection AUROC, and breaks accuracy down by behavior.
 ## Models
 
 Any decoder-only checkpoint in safetensors format works: a local directory or a Hugging Face repo id, which is
-downloaded on first use. `wsr` finds the tensors an edit needs from the checkpoint's own names and shapes:
+downloaded on first use. Two things are worked out automatically.
 
-- the residual-writing matrices of every block;
-- the unembedding, and whether it is tied to the input embedding;
-- norm gains, including Gemma-style `1 + w` gains;
-- matrix orientation, e.g. GPT-2's transposed `Conv1D`.
+**The model family**, read from `config.json`, sets how the model is run:
 
-The tests cover Llama, Qwen2, Gemma 2, Phi-3, GPT-2 and GPT-NeoX layouts.
+- whether the chat template takes `enable_thinking`;
+- how the answer is split from the reasoning: `</think>`, gpt-oss's harmony `final` channel, or Muse-Glimmer's
+  `<|eom|>` channels;
+- which special tokens must be kept;
+- which tensors may never be edited: the vision tower and the multi-token-prediction head;
+- the vLLM arguments for measurement, and the parsers for serving the same model as an agent.
+
+**The anatomy**, read from the tensors themselves, says where an edit can act. It finds:
+
+- the matrices that write each block into the residual stream;
+- the unembedding;
+- the norm gains, including `1 + w` gains.
+
+On top of that it handles the newer architectures:
+
+| | handled as |
+|---|---|
+| mixture of experts, one matrix per expert or fused into one 3-D tensor | "the MLP" is every expert plus the shared expert; the router gets its own edit family (R) |
+| hybrid attention (Gated DeltaNet + full attention) | each layer's own mixer output |
+| a norm after every sublayer (Gemma 3, OLMo, Muse-Glimmer) | scaling the matrix before that norm does nothing, so the pool edits the norm gains instead (the paper's Muse-30B finding) |
+| multimodal wrappers (`model.language_model.*`) | the language-model stack only |
+| MTP blocks after the stack | ignored and frozen |
+| quantized checkpoints (MXFP4, FP8, GPTQ) | refused, with a message to use a bf16 release |
+
+| family | models | notes |
+|---|---|---|
+| `qwen3.5` | Qwen3.5, Qwen3.8 | hybrid Gated DeltaNet + full attention, vision tower and MTP frozen, thinking |
+| `qwen3`, `qwen3-moe` | Qwen3 dense and MoE | qk-norm, thinking |
+| `qwen3-next`, `qwen3-vl` | Qwen3-Next, Qwen3-VL | hybrid attention + MoE with a shared expert; vision wrapper |
+| `muse-glimmer` | Muse-Glimmer | post-norms with `1 + w` gains, `to=self` reasoning channels |
+| `gpt-oss` | gpt-oss | fused experts, attention sinks, harmony format (use a bf16 checkpoint) |
+| `gemma3`, `llama4`, `deepseek-v3`, `glm4-moe`, `olmo` | Gemma 3, Llama 4, DeepSeek-V3 / Kimi K2, GLM-4.5, OLMo 2/3, EXAONE 4 | |
+| `generic` | everything else | Llama, Mistral, Phi, GPT-2, … |
 
 ```bash
-wsr inspect tiny     # what wsr detected: layers, unembedding, norms, token rows (</think>, A-J, digits, eos, unused)
+wsr families         # the list above
+wsr inspect qwen9b   # family, settings, anatomy (MoE, hybrid, post-norm), token rows, and a ready `vllm serve` line
 ```
 
 ```yaml
 models:
-  qwen7b:
-    path: Qwen/Qwen2.5-7B-Instruct
+  qwen9b:
+    path: Qwen/Qwen3.5-9B
     backend: vllm              # or hf (Transformers; GPU, Apple MPS or CPU)
-    thinking: null             # true / false sets enable_thinking in the chat template
+    # family: qwen3.5          # detected; set it to force one, or `generic` to switch family settings off
+    # thinking: false          # anything you set wins over the family's default
     vllm: {gpu_memory_utilization: 0.85}
     anatomy: {}                # override anything detected wrongly, e.g. mlp_out: "model.layers.{l}.mlp.down_proj.weight"
-    tokens: {}                 # override token rows, e.g. close: 151668
+    tokens: {}                 # override token rows, e.g. close: 248069
+  muse:
+    path: meta-models/Muse-Glimmer-30B
+    backend: vllm
 ```
+
+The tests build small random models of Qwen3, Qwen3-MoE, Qwen3-Next, gpt-oss, Gemma 3, Llama 4, DeepSeek-V3,
+GLM-4.5 and OLMo 3, plus synthetic Qwen3.5 and Muse-Glimmer checkpoints with the real tensor names. On each of them
+they check four things: detection, the standard pool, measurement (patching and undoing edits in a loaded model),
+and `wsr program`.
 
 ## Agents: any model, any API
 
@@ -161,7 +200,7 @@ agents:
   gemini:      {provider: gemini, model: gemini-2.5-pro}
   deepseek:    {provider: deepseek, model: deepseek-chat}
   router:      {provider: openrouter, model: qwen/qwen3-235b-a22b}
-  mine:        {provider: openai, base_url: http://localhost:8000/v1, model: Qwen/Qwen2.5-7B-Instruct, identity: qwen7b}
+  mine:        {provider: openai, base_url: http://localhost:8000/v1, model: qwen9b, identity: qwen9b}   # `wsr inspect qwen9b` prints the serve line
   local-llama: {provider: ollama, model: llama3.1:8b}
   same:        {harness: baseline, params: {strategy: same}}
 ```
@@ -390,7 +429,8 @@ The tests download nothing except the GPT-2 tokenizer files. Small random models
 the whole pipeline runs end to end on a CPU in about a minute. They cover:
 
 - equivalence with the paper's released code;
-- architecture detection on six model families;
+- architecture detection on six classic and eleven new-generation layouts (MoE, fused experts, hybrid attention,
+  post-norm, multimodal wrapper, MTP), with measurement on six of them;
 - every edit op;
 - the agent loop, with scripted models;
 - the full reading and programming pipelines, end to end on a CPU;

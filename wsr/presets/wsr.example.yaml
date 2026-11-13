@@ -15,10 +15,12 @@ models:
     thinking: null           # true/false: pass enable_thinking to the chat template; null: leave the template alone
     answer_format: think     # text after </think> is the answer (no effect if the model does not think)
     hf: {batch_size: 16}     # device / dtype are picked automatically
-  # qwen7b:
-  #   path: Qwen/Qwen2.5-7B-Instruct
-  #   backend: vllm
-  #   vllm: {gpu_memory_utilization: 0.85}
+  # New-generation models: the family (thinking, answer format, frozen vision/MTP tensors, vLLM arguments) is
+  # detected from config.json; `wsr families` lists them, `wsr inspect <key>` shows what was detected.
+  # qwen9b: {path: Qwen/Qwen3.5-9B, backend: vllm}
+  # qwen30b: {path: Qwen/Qwen3-30B-A3B, backend: vllm}               # MoE: experts and router are edited too
+  # muse: {path: meta-models/Muse-Glimmer-30B, backend: vllm}
+  # oss: {path: /models/gpt-oss-20b-bf16, backend: vllm}            # a bf16 copy: MXFP4 weights cannot be edited
   # The paper's models use presets (key 27b / 9b / muse30b, or `preset:`), which fix the measurement settings:
   # 27b: {path: /models/Qwen3.8-27B}
 

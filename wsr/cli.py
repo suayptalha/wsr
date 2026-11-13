@@ -64,8 +64,13 @@ def cmd_doctor(a, cfg):
             try:
                 from .anatomy import Anatomy
                 from .checkpoint import Checkpoint
+                from .config import model_dir
+                model_dir(cfg, k)
                 s = Anatomy(Checkpoint(p), m.get("anatomy")).summary()
-                line(True, f"model {k}", f"{s['model_type']}, {s['layers']} layers, hidden {s['hidden']}, backend {m['backend']}")
+                extra = (f", MoE {s['moe']['experts']} experts" if s["moe"] else "") + (", hybrid attention" if s["hybrid_attention"] else "") \
+                    + (", post-norm" if s["post_norm"] else "")
+                line(True, f"model {k}", f"family {m.get('family')}: {s['model_type']}, {s['layers']} layers, hidden "
+                                         f"{s['hidden']}{extra}, backend {m['backend']}")
             except Exception as e:  # noqa: BLE001
                 line(False, f"model {k}", f"{p}: {e}")
         else:
@@ -108,12 +113,19 @@ def cmd_inspect(a, cfg):
     from .anatomy import Anatomy, token_roles
     from .checkpoint import Checkpoint
     from .config import model_dir
+    from .families import get, has_vision, read_config, serve_command
     d = model_dir(cfg, a.model)
     m = cfg["models"][a.model]
-    s = Anatomy(Checkpoint(d), m.get("anatomy")).summary()
-    s["token_rows"] = token_roles(d, m.get("tokens"))
+    fam = get(m["family"]) if m.get("family") not in (None, "auto", "paper") else None
+    s = {"family": m.get("family"), "family_notes": fam.description if fam else "the paper's preset",
+         "settings": {k: m.get(k) for k in ("thinking", "answer_format", "skip_special_tokens", "frozen", "hf_class", "vllm")}}
+    s.update(Anatomy(Checkpoint(d), m.get("anatomy")).summary())
+    s["token_rows"] = token_roles(d, m.get("tokens"), fam.close_tokens if fam else ())
     s["path"] = str(d)
     print(json.dumps(s, indent=1))
+    if fam:
+        print("\nto serve it as an agent (OpenAI-compatible endpoint with tool calls):\n  "
+              + serve_command(fam, str(m["path"]), a.model, has_vision(read_config(d))))
 
 
 def cmd_experiments(a):
@@ -195,6 +207,7 @@ def main(argv=None):
     s.add_argument("--program", action="store_true", help="also write example programs (programs/*.yaml + data)")
     s = sub.add_parser("doctor", help="check the installation, models, agents and sandbox")
     s.add_argument("--ping", action="store_true", help="send one request to every agent")
+    sub.add_parser("families", help="list the model families wsr knows (Qwen3.5, Qwen3, Muse-Glimmer, gpt-oss, ...)")
     s = sub.add_parser("inspect", help="show what wsr detects in a model's checkpoint")
     s.add_argument("model")
     sub.add_parser("experiments", help="list the built-in experiments")
@@ -257,6 +270,11 @@ def main(argv=None):
             return cmd_init(a)
         if a.cmd == "experiments":
             return cmd_experiments(a)
+        if a.cmd == "families":
+            from .families import FAMILIES
+            for f in FAMILIES:
+                print(f"{f.name:<14} {f.description}")
+            return
         if a.cmd == "data" and not a.config:
             from .prepare_data import prepare
             return prepare(a.out or "data", a.seed)

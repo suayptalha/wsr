@@ -2,7 +2,7 @@
 
 An intervention is ``{"id", "target", "type", "ops": [...]}``. Each op is a small, exactly specified change:
 
-  scale       {"tensor", "factor"}                      W <- factor * W
+  scale       {"tensor" | "tensors", "factor"}           W <- factor * W  (each tensor of the list)
   scale_rows  {"tensor", "rows", "factor"}              W[rows] <- factor * W[rows]
   orth        {"tensors", "u_rows", "alpha"?}           W <- W - alpha * u u^T W, u from unembedding rows
   noise       {"tensor", "rel", "seed"}                 W <- W + N, ||N||_F = rel * ||W||_F
@@ -50,6 +50,24 @@ def effective_gain(ck: Checkpoint, name: str | None) -> torch.Tensor | float:
 
 def is_centered(ck: Checkpoint, name: str) -> bool:
     return bool(ck.get(name).float().abs().mean() < 0.5)
+
+
+def names_desc(names: list[str]) -> str:
+    """A list of tensor names for a description; long lists of per-expert matrices are shown as a pattern."""
+    import re
+    if len(names) > 8 and any(".experts." in n for n in names):
+        groups: dict[str, list[int]] = {}
+        rest = []
+        for n in names:
+            m = re.match(r"^(.*\.experts\.)(\d+)(\..*)$", n)
+            if m:
+                groups.setdefault(m[1] + "{e}" + m[3], []).append(int(m[2]))
+            else:
+                rest.append(n)
+        parts = [f"`{k}` for experts e = {min(v)}..{max(v)}" if sorted(v) == list(range(min(v), max(v) + 1))
+                 else f"`{k}` for experts e in {sorted(v)}" for k, v in groups.items()]
+        return "[" + "; ".join(parts + [f"`{n}`" for n in rest]) + "]"
+    return str(names)
 
 
 def changed_rows(new: torch.Tensor, old: torch.Tensor) -> torch.Tensor:
@@ -118,7 +136,11 @@ def apply_ops(ck: Checkpoint, spec: dict, anat=None, dtype: str | None = None) -
     full, desc = {}, []
     for op in spec["ops"]:
         k = op["op"]
-        if k == "scale":
+        if k == "scale" and "tensors" in op:
+            for n in op["tensors"]:
+                full[n] = full.get(n, ck.get(n).float()) * op["factor"]
+            desc.append(f"All values of each of {names_desc(op['tensors'])} multiplied by {op['factor']}.")
+        elif k == "scale":
             full[op["tensor"]] = full.get(op["tensor"], ck.get(op["tensor"]).float()) * op["factor"]
             desc.append(f"All values of `{op['tensor']}` multiplied by {op['factor']}.")
         elif k == "scale_rows":
@@ -126,14 +148,15 @@ def apply_ops(ck: Checkpoint, spec: dict, anat=None, dtype: str | None = None) -
             T = full.get(n, ck.get(n).float()).clone()
             T[op["rows"]] *= op["factor"]
             full[n] = T
-            tied = " (this matrix is also the input embedding)" if op.get("tied") else ""
+            tied = (" (this matrix is also the input embedding)" if op.get("tied") else
+                    " (the router: each row scores one expert)" if op.get("router") else "")
             desc.append(f"Row(s) {op['rows']} of `{n}`{tied} multiplied by {op['factor']}.")
         elif k == "gain":
             for n in op["tensors"]:
                 Wn = full.get(n, ck.get(n).float())
                 full[n] = (op["factor"] * (1.0 + Wn) - 1.0) if op.get("centered") else op["factor"] * Wn
             form = "(1 + w)" if op.get("centered") else "w"
-            desc.append(f"The effective {label} gain {form} of each of {op['tensors']} multiplied by {op['factor']}.")
+            desc.append(f"The effective {label} gain {form} of each of {names_desc(op['tensors'])} multiplied by {op['factor']}.")
         elif k == "noise":
             T = ck.get(op["tensor"]).float()
             g = torch.Generator().manual_seed(op["seed"])
@@ -152,17 +175,21 @@ def apply_ops(ck: Checkpoint, spec: dict, anat=None, dtype: str | None = None) -
                 W = ck.get(n).float()
                 ax = anat.out_axis(n) if axis is None else axis
                 # axis 0: W is [hidden, in], the output dimension is the residual stream; axis 1: W is [in, hidden]
-                full[n] = W - al * (torch.outer(u, u @ W) if ax == 0 else torch.outer(W @ u, u))
+                if W.dim() == 2:
+                    full[n] = W - al * (torch.outer(u, u @ W) if ax == 0 else torch.outer(W @ u, u))
+                else:                                   # fused experts [n_experts, ., .]: the same, per expert
+                    full[n] = W - al * (u[:, None] * torch.einsum("h,ehi->ei", u, W)[:, None, :] if ax == 0
+                                        else (W @ u)[..., None] * u)
             ax = axis if axis is not None else anat.out_axis(op["tensors"][0])
             where = "output dimension = residual stream" + ("" if ax == 0 else ", stored as [in, out]")
             form = "u u^T W" if ax == 0 else "W u u^T"
             udef = (f"normalized (final {label} gain * mean of row(s) {op['u_rows']} of `{unembed}`)" if fnorm
                     else f"normalized (mean of row(s) {op['u_rows']} of `{unembed}`)")
             if al == 1.0:
-                desc.append(f"From each of {op['tensors']} ({where}) the component along a unit "
+                desc.append(f"From each of {names_desc(op['tensors'])} ({where}) the component along a unit "
                             f"vector u was projected out (W <- W - {form}), where u = {udef}.")
             else:
-                desc.append(f"From each of {op['tensors']} ({where}) a fraction {al} of the component "
+                desc.append(f"From each of {names_desc(op['tensors'])} ({where}) a fraction {al} of the component "
                             f"along a unit vector u was removed (W <- W - {al} {form}), where u = {udef}.")
         elif k in ("agent_edit", "delta"):
             from safetensors.torch import load_file

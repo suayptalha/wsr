@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wsr"
-version = "0.3.0"
+version = "0.4.0"
 description = "Weight-space reading and programming: can a language model predict, or write, what an edit to a network's weights does?"
 readme = "README.md"
 license = {text = "Apache-2.0"}

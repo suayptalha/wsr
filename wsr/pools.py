@@ -22,7 +22,8 @@ from .ops import dose_ops, is_centered
 
 FAMILY_NAMES = {"A": "agent-proposed edit", "B": "block ablation / scaling", "C": "vocabulary-row scaling",
                 "D": "direction removal", "E": "norm-matched noise", "F": "no-op control", "G": "norm-gain scaling",
-                "H": "post-attention norm gain", "M": "gate_proj scaling", "P": "pre-FFN norm gain", "T": "final norm gain"}
+                "H": "post-attention norm gain", "M": "gate_proj scaling", "P": "pre-FFN norm gain", "T": "final norm gain",
+                "R": "router rows (mixture of experts)"}
 STANDARD_FAMILIES = ("B", "C", "D", "E", "G", "F")
 
 
@@ -44,9 +45,13 @@ def _spread(n_layers: int, k: int, lo: float = 0.0, hi: float = 1.0) -> list[int
 
 # ---------------------------------------------------------------- the standard bank for any model
 def standard_pool(ck, anat, roles: dict, target: str, opts: dict | None = None) -> list[dict]:
-    """A bank of edits built from the checkpoint's own names. ``opts``: ``families`` (subset of BCDEGF),
-    ``size`` (``small``: about 40 edits, ``medium``: about 80, default), ``seed`` (noise seeds)."""
-    o = {"families": list(STANDARD_FAMILIES), "size": "medium", "seed": 0, **(opts or {})}
+    """A bank of edits built from the checkpoint's own names. ``opts``: ``families`` (subset of BCDEGRF),
+    ``size`` (``small``: about 40 edits, ``medium``: about 80, default), ``seed`` (noise seeds).
+
+    Architecture-aware: in a mixture-of-experts block "the MLP" is every expert plus any shared expert, and the
+    router gets its own family (R); where a norm follows each sublayer's output (``anat.post_norm``) scaling the
+    output matrix is undone by that norm, so only ablations are kept and the norm gains are edited instead (G)."""
+    o = {"families": list(STANDARD_FAMILIES) + ["R"], "size": "medium", "seed": 0, **(opts or {})}
     big = o["size"] != "small"
     fam = set(o["families"])
     L = anat.n_layers
@@ -57,22 +62,31 @@ def standard_pool(ck, anat, roles: dict, target: str, opts: dict | None = None) 
     add = lambda typ, ops: S.append({"type": typ, "ops": ops})  # noqa: E731
     sc = lambda n, f: {"op": "scale", "tensor": n, "factor": f}  # noqa: E731
     rows = lambda r, f: {"op": "scale_rows", "tensor": U, "rows": r, "factor": f, **({"tied": True} if anat.tied else {})}  # noqa: E731
-    mlp = [anat.mlp_out(l) for l in layers]
-    if None in mlp and fam & {"B", "D", "E"}:
+    mlps = [anat.mlp_outs(l) for l in layers]
+    if any(not m for m in mlps) and fam & {"B", "D", "E"}:
         raise ConfigError(f"{target}: could not find the MLP output matrices; set models.{target}.anatomy.mlp_out "
                           "(e.g. 'model.layers.{l}.mlp.down_proj.weight')")
+    scale_mlp = lambda i, f: sc(mlps[i][0], f) if len(mlps[i]) == 1 else {"op": "scale", "tensors": mlps[i], "factor": f}  # noqa: E731
+    first = lambda i: mlps[i][0]  # noqa: E731
     seed = int(o["seed"])
 
     if "B" in fam:
-        for l in _spread(L, 8 if big else 5):
-            add("B", [sc(mlp[l], 0.0)])
-        for f in ((0.25, 0.5, 0.75, 1.0) if big else (0.5, 1.0)):
-            add("B", [sc(mlp[layers.index(lay(f))], 0.5)])
+        for i in _spread(L, 8 if big else 5):
+            add("B", [scale_mlp(i, 0.0)])
+        if not anat.post_norm:                       # a norm after the MLP would undo a uniform scaling
+            for f in ((0.25, 0.5, 0.75, 1.0) if big else (0.5, 1.0)):
+                add("B", [scale_mlp(layers.index(lay(f)), 0.5)])
         attn = [(l, anat.attn_out(l)) for l in layers]
         attn = [(l, n) for l, n in attn if n]
         if attn:
             for i in _spread(len(attn), 4 if big else 2, 0.1, 1.0):
                 add("B", [sc(attn[i][1], 0.0)])
+            if anat.hybrid:                          # both kinds of mixer: also ablate the other kind
+                kinds = {}
+                for l, n in attn:
+                    kinds.setdefault(n.split(".")[-3], []).append(n)
+                for ns in kinds.values():
+                    add("B", [sc(ns[len(ns) // 2], 0.0)])
     if "C" in fam:
         if "close" in roles:
             for f in ((0.0, 0.5, 1.5, 3.0) if big else (0.0, 2.0)):
@@ -81,9 +95,9 @@ def standard_pool(ck, anat, roles: dict, target: str, opts: dict | None = None) 
             for f in ((0.5, 1.5) if big else (1.5,)):
                 add("C", [rows([roles["eos"]], f)])
         if "letters" in roles:
-            first = roles["letters"][0]
+            first_letter = roles["letters"][0]
             for f in ((0.0, 1.5) if big else (0.0,)):
-                add("C", [rows([first], f)])
+                add("C", [rows([first_letter], f)])
             for f in ((0.7, 1.3) if big else (1.3,)):
                 add("C", [rows(roles["letters"][:4], f)])
         if "digits" in roles and big:
@@ -95,17 +109,21 @@ def standard_pool(ck, anat, roles: dict, target: str, opts: dict | None = None) 
             dirs.append(("letters", roles["letters"][:4]))
         if "eos" in roles and not dirs:
             dirs.append(("eos", [roles["eos"]]))
+        starts = (0.5, 0.75) if big and not anat.moe_layers else (0.75,)
         for _name, u in dirs:
-            for start in ((0.5, 0.75) if big else (0.75,)):
-                add("D", [{"op": "orth", "tensors": [mlp[i] for i in range(layers.index(lay(start)), L)], "u_rows": u}])
+            for start in starts:
+                ts = [n for i in range(layers.index(lay(start)), L) for n in mlps[i]]
+                add("D", [{"op": "orth", "tensors": ts, "u_rows": u}])
     if "E" in fam:
-        for i, f in enumerate((0.25, 0.5, 0.75, 1.0) if big else (0.5, 1.0)):
-            n = mlp[layers.index(lay(f))]
-            add("E", [{"op": "noise", "tensor": n, "rel": 0.5, "seed": seed + 100 + i}])
+        for k, f in enumerate((0.25, 0.5, 0.75, 1.0) if big else (0.5, 1.0)):
+            n = first(layers.index(lay(f)))
+            add("E", [{"op": "noise", "tensor": n, "rel": 0.5, "seed": seed + 100 + k}])
             if big:
-                add("E", [{"op": "noise", "tensor": n, "rel": 1.0, "seed": seed + 200 + i}])
+                add("E", [{"op": "noise", "tensor": n, "rel": 1.0, "seed": seed + 200 + k}])
     if "G" in fam:
         kinds = anat.norm_kinds()
+        if anat.post_norm:                           # the norms that set how much each sublayer writes come first
+            kinds = sorted(kinds, key=lambda k: (not k.startswith("post_"), k))
         groups = [layers[: L // 2], layers[L // 2:]] if L > 1 else [layers]
         for kind in kinds[: (3 if big else 2)]:
             for g in groups:
@@ -117,17 +135,27 @@ def standard_pool(ck, anat, roles: dict, target: str, opts: dict | None = None) 
             for f in ((0.5, 2.0) if big else (2.0,)):
                 add("G", [{"op": "gain", "tensors": [anat.final_norm], "factor": f,
                            "centered": is_centered(ck, anat.final_norm)}])
+    if "R" in fam and anat.moe_layers:
+        mo = anat.moe_layers
+        for l in sorted({mo[len(mo) // 2], mo[-1]}):
+            r = anat.router(l)
+            if r:
+                for f in ((0.0, 3.0) if big else (3.0,)):
+                    add("R", [{"op": "scale_rows", "tensor": r, "rows": [0], "factor": f, "router": True}])
+            e = anat._experts(l)
+            if isinstance(e, list):                  # ablate one expert
+                add("B", [sc(e[0], 0.0)])
     if "F" in fam:
         ref = roles.get("close", roles.get("eos", (roles.get("letters") or [0])[0]))
         for f in ((1.01, 0.99) if big else (1.01,)):
             add("F", [rows([ref], f)])
         for r in (roles.get("unused") or [])[: (2 if big else 1)]:
             add("F", [rows([r], 0.0)])
-        mid = mlp[layers.index(lay(0.5))]
+        mid = first(layers.index(lay(0.5)))
         add("F", [{"op": "noise", "tensor": mid, "rel": 1e-4, "seed": seed + 300}])
         add("F", [sc(mid, 1.001)])
         if big:
-            add("F", [sc(mlp[layers.index(lay(0.9))], 1.001)])
+            add("F", [sc(first(layers.index(lay(0.9))), 1.001)])
     return _assign_ids(S, target, "S")
 
 
@@ -219,11 +247,13 @@ def build_pool(cfg: dict, exp: dict, t: str) -> list[dict]:
     if kind == "standard":
         from .anatomy import Anatomy, token_roles
         from .checkpoint import Checkpoint
+        from .families import get
         d = model_dir(cfg, t)
         ck = Checkpoint(d)
         m = cfg["models"][t]
         anat = Anatomy(ck, m.get("anatomy"))
-        return standard_pool(ck, anat, token_roles(d, m.get("tokens")), t, exp["pool"])
+        close = get(m["family"]).close_tokens if m.get("family") not in (None, "auto", "paper") else ()
+        return standard_pool(ck, anat, token_roles(d, m.get("tokens"), close), t, exp["pool"])
     raise ConfigError(f"{exp['_source']}: unknown pool kind `{kind}`")
 
 
