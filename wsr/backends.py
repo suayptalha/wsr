@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 
+EXPERT_RX = re.compile(r"^(.*\.experts)\.(\d+)\.(\w+)\.weight$")
 HARMONY_FINAL = re.compile(r"<\|channel\|>\s*final\s*(?:<\|constrain\|>[^<]*)?<\|message\|>(.*?)(?:<\|return\|>|<\|end\|>|<\|call\|>|$)", re.S)
 
 
@@ -167,7 +168,7 @@ class HFBackend(Backend):
         self.rename = [(re.compile(k), v) for k, v in (getattr(self.model, "_checkpoint_conversion_mapping", None) or {}).items()]
         self.saved: dict[str, "torch.Tensor"] = {}
 
-    def _param(self, name: str):
+    def _lookup(self, name: str):
         if name in self.params:
             return self.params[name]
         for rx, rep in self.rename:
@@ -175,22 +176,54 @@ class HFBackend(Backend):
             if alt != name and alt in self.params:
                 return self.params[alt]
         hits = [k for k in self.params if k.endswith("." + name) or name.endswith("." + k)]
-        if len(hits) == 1:
-            return self.params[hits[0]]
+        return self.params[hits[0]] if len(hits) == 1 else None
+
+    def _param(self, name: str):
+        p = self._lookup(name)
+        if p is None:
+            raise KeyError(f"`{name}` does not match a parameter of the loaded model")
+        return p
+
+    def _target(self, name: str, shape) -> tuple:
+        """(parameter, index, transpose) where a checkpoint tensor lives in the loaded model. Transformers 5 loads
+        per-expert matrices (`experts.{e}.down_proj`, `experts.{e}.gate_proj` / `up_proj`) fused into 3-D tensors
+        (`experts.down_proj`, `experts.gate_up_proj` = [gate; up]); the edit is written into expert e's slice."""
+        p = self._lookup(name)
+        if p is not None:
+            return p, (), False
+        m = EXPERT_RX.match(name)
+        if m:
+            prefix, e, proj = m[1], int(m[2]), m[3]
+            fused = self._lookup(f"{prefix}.{proj}")
+            if fused is not None and fused.dim() == 3:
+                s = tuple(fused.shape[1:])
+                if s == tuple(shape):
+                    return fused, (e,), False
+                if s == tuple(shape)[::-1]:
+                    return fused, (e,), True
+            gu = self._lookup(f"{prefix}.gate_up_proj")
+            if gu is not None and gu.dim() == 3 and proj in ("gate_proj", "up_proj"):
+                rows, cols = shape
+                half = slice(0, rows) if proj == "gate_proj" else slice(rows, 2 * rows)
+                if tuple(gu.shape[1:]) == (2 * rows, cols):
+                    return gu, (e, half), False
+                if tuple(gu.shape[1:]) == (cols, 2 * rows):
+                    return gu, (e, slice(None), half), True
         raise KeyError(f"`{name}` does not match a parameter of the loaded model")
 
     def patch(self, tensors: dict) -> None:
         import torch
         with torch.no_grad():
-            for n, orig in self.saved.items():
+            for n, (p, idx, orig) in list(self.saved.items()):
                 if n not in tensors:
-                    self._param(n).data.copy_(orig.to(self._param(n).device))
-            self.saved = {n: o for n, o in self.saved.items() if n in tensors}
+                    p.data[idx] = orig.to(p.device)
+                    del self.saved[n]
             for n, T in tensors.items():
-                p = self._param(n)
+                p, idx, tr = self._target(n, tuple(T.shape))
                 if n not in self.saved:
-                    self.saved[n] = p.detach().to("cpu", copy=True)
-                p.data.copy_(T.to(device=p.device, dtype=p.dtype).reshape(p.shape))
+                    self.saved[n] = (p, idx, p.data[idx].detach().to("cpu", copy=True))
+                v = T.t() if tr else T
+                p.data[idx] = v.to(device=p.device, dtype=p.dtype).reshape(p.data[idx].shape)
 
     def _prompt(self, msgs: list[dict]) -> str:
         if getattr(self.tok, "chat_template", None):

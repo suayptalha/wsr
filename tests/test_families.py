@@ -35,7 +35,7 @@ ARCHS = {
     "gpt_oss": {**B, "num_local_experts": 4, "num_experts_per_tok": 2, "layer_types": ["sliding_attention", "full_attention"] * 2},
     "gemma3_text": B,
     "llama4_text": {**B, "intermediate_size_mlp": 64, "num_local_experts": 4, "interleave_moe_layer_step": 2},
-    "deepseek_v3": {**B, **MOE, "n_routed_experts": 4, "n_shared_experts": 1, "first_k_dense_replace": 1, "kv_lora_rank": 16,
+    "deepseek_v3": {**B, **MOE, "num_key_value_heads": 4, "n_routed_experts": 4, "n_shared_experts": 1, "first_k_dense_replace": 1, "kv_lora_rank": 16,
                     "q_lora_rank": 16, "qk_rope_head_dim": 8, "qk_nope_head_dim": 8, "v_head_dim": 8, "n_group": 1, "topk_group": 1},
     "glm4_moe": {**B, **MOE, "n_routed_experts": 4, "n_shared_experts": 1, "first_k_dense_replace": 1, "n_group": 1, "topk_group": 1},
     "olmo3": B,
@@ -46,7 +46,8 @@ EXPECT = {"qwen3": ("qwen3", 0, None, False, False), "qwen3_moe": ("qwen3-moe", 
           "gemma3_text": ("gemma3", 0, None, False, True), "llama4_text": ("llama4", 2, True, False, False),
           "deepseek_v3": ("deepseek-v3", 3, False, False, False), "glm4_moe": ("glm4-moe", 3, False, False, False),
           "olmo3": ("olmo", 0, None, False, True),
-          "qwen3.5": ("qwen3.5", 4, False, True, False), "muse": ("muse-glimmer", 0, None, False, True)}
+          "qwen3.5": ("qwen3.5", 0, None, True, False), "qwen3.5-moe": ("qwen3.5", 4, False, True, False),
+          "muse": ("muse-glimmer", 0, None, False, True), "deepseek_v4": ("deepseek-v4", 4, False, False, False)}
 ROLES = {"close": 5, "eos": 1, "letters": [10, 11, 12, 13], "digits": list(range(20, 30)), "unused": [60, 61]}
 
 
@@ -62,6 +63,57 @@ def _save_hf(arch: str, d: Path):
     from transformers import AutoConfig, AutoModelForCausalLM
     torch.manual_seed(0)
     AutoModelForCausalLM.from_config(AutoConfig.for_model(arch, **ARCHS[arch])).save_pretrained(d, safe_serialization=True)
+    _tok(d)
+
+
+REAL = {"qwen3.5": "qwen3_5", "qwen3.5-moe": "qwen3_5_moe", "muse": "muse_glimmer", "deepseek_v4": "deepseek_v4"}
+
+
+def _available(mt: str) -> bool:
+    from transformers.models.auto.configuration_auto import CONFIG_MAPPING_NAMES
+    return mt in CONFIG_MAPPING_NAMES
+
+
+def _save_real(mt: str, d: Path, layers: int = 4):
+    """A tiny random model from the installed Transformers' own definition (text stack shrunk, vision tower kept tiny)."""
+    from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForImageTextToText
+    c = AutoConfig.for_model(mt)
+    tc = getattr(c, "text_config", None) or c
+    t = tc.to_dict()
+    t.update(hidden_size=32, intermediate_size=64, num_attention_heads=4, num_key_value_heads=2, head_dim=8,
+             vocab_size=V, num_hidden_layers=layers)
+    for k, v in dict(moe_intermediate_size=16, shared_expert_intermediate_size=16, num_experts=4, n_routed_experts=4,
+                     num_experts_per_tok=2, linear_num_value_heads=4, linear_num_key_heads=2, linear_key_head_dim=8,
+                     linear_value_head_dim=8, sliding_window=16, mtp_num_hidden_layers=1).items():
+        if k in t:
+            t[k] = v
+    if t.get("layer_types"):
+        t["layer_types"] = (["linear_attention"] * 3 + ["full_attention"]) if mt.startswith("qwen3_5") else \
+            [t["layer_types"][i % len(t["layer_types"])] for i in range(layers)]
+    for k in ("bos_token_id", "eos_token_id", "pad_token_id"):
+        if isinstance(t.get(k), int) and t[k] >= V:
+            t[k] = V - 1                                   # token 0 ("!") must stay an ordinary token
+    t.pop("model_type", None)
+    torch.manual_seed(0)
+    if tc is c:
+        conf = type(c)(**t)
+        AutoModelForCausalLM.from_config(conf).save_pretrained(d)
+    else:
+        vc = c.vision_config.to_dict()
+        for k, v in dict(depth=1, num_hidden_layers=1, hidden_size=16, intermediate_size=32, num_heads=2,
+                         num_attention_heads=2, out_hidden_size=32, embed_dim=16, projection_dim=32).items():
+            if k in vc:
+                vc[k] = v
+        if vc.get("layer_types"):
+            vc["layer_types"] = vc["layer_types"][:1]
+        vc.pop("model_type", None)
+        cd = c.to_dict()
+        cd.update(text_config=t, vision_config=vc)
+        for k in ("bos_token_id", "eos_token_id", "pad_token_id", "image_token_id", "video_token_id"):
+            if isinstance(cd.get(k), int) and cd[k] >= V:
+                cd[k] = V - 1
+        cd.pop("model_type", None)
+        AutoModelForImageTextToText.from_config(type(c)(**cd)).save_pretrained(d)
     _tok(d)
 
 
@@ -103,8 +155,12 @@ def model(request, tmp_path_factory):
     d = tmp_path_factory.mktemp(name.replace(".", "_"))
     if name in ARCHS:
         _save_hf(name, d)
+    elif name in REAL and _available(REAL[name]):
+        _save_real(REAL[name], d)
+    elif name in ("qwen3.5", "muse"):
+        _synthetic(name, d)                              # older Transformers: same tensor names, built by hand
     else:
-        _synthetic(name, d)
+        pytest.skip(f"{name} needs a newer Transformers")
     if name == "deepseek_v3":                            # an MTP block after the stack, as in the released checkpoints
         extra = {"model.layers.4.mlp.down_proj.weight": torch.randn(32, 64), "model.layers.4.input_layernorm.weight": torch.ones(32)}
         save_file(extra, str(d / "mtp.safetensors"))
@@ -128,10 +184,12 @@ def model(request, tmp_path_factory):
 def test_family_and_anatomy(model):
     name, d = model
     fam, n_moe, fused, hybrid, post = EXPECT[name]
+    if name in ("qwen3.5", "muse") and not _available(REAL[name]):
+        n_moe = 4 if name == "qwen3.5" else 0            # the hand-built Qwen3.5 stand-in is a MoE model
     assert detect(d).name == fam
     a = Anatomy(Checkpoint(d))
     assert a.n_layers == 4 and a.hidden == 32
-    assert "language_model" in a.layer_stem if name in ("qwen3.5", "muse") else True
+    assert "language_model" in a.layer_stem if name in ("qwen3.5", "qwen3.5-moe", "muse") else True
     assert len(a.moe_layers) == n_moe and a.hybrid == hybrid and a.post_norm == post
     if n_moe:
         assert isinstance(a._experts(a.moe_layers[0]), str) == fused
@@ -207,7 +265,7 @@ def test_quantized_checkpoint_is_refused(tmp_path):
 
 
 # ---------------------------------------------------------------- running the models
-RUNNABLE = ["qwen3", "qwen3_moe", "qwen3_next", "gpt_oss", "olmo3", "deepseek_v3"]
+RUNNABLE = ["qwen3", "qwen3_moe", "qwen3_next", "gpt_oss", "olmo3", "deepseek_v3", "qwen3.5", "qwen3.5-moe", "muse"]
 
 
 @pytest.mark.skipif(not TOK, reason="needs the gpt2 tokenizer")
@@ -215,10 +273,17 @@ RUNNABLE = ["qwen3", "qwen3_moe", "qwen3_next", "gpt_oss", "olmo3", "deepseek_v3
 def test_hf_backend_patches_new_architectures(arch, tmp_path):
     from wsr.backends import HFBackend
     from wsr.programming import GenSettings
-    _save_hf(arch, tmp_path)
+    if arch in REAL:
+        if not _available(REAL[arch]):
+            pytest.skip(f"{arch} needs a newer Transformers")
+        _save_real(REAL[arch], tmp_path)
+    else:
+        _save_hf(arch, tmp_path)
     ck = Checkpoint(tmp_path)
     a = Anatomy(ck)
-    be = HFBackend(tmp_path, {"hf": {"batch_size": 4}}, GenSettings(4, {"temperature": 0.0}, None))
+    from wsr.families import apply
+    mcfg = apply({"family": "auto", "hf": {"batch_size": 4}}, tmp_path)
+    be = HFBackend(tmp_path, mcfg, GenSettings(4, {"temperature": 0.0}, None))
     msgs = [[{"role": "user", "content": f"hello {i}"}] for i in range(3)]
     base = [o.text for o in be.generate(msgs, 0)]
     zero = {a.final_norm: torch.zeros_like(ck.get(a.final_norm))}

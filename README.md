@@ -156,12 +156,12 @@ On top of that it handles the newer architectures:
 
 | family | models | notes |
 |---|---|---|
-| `qwen3.5` | Qwen3.5, Qwen3.8 | hybrid Gated DeltaNet + full attention, vision tower and MTP frozen, thinking |
+| `qwen3.5` | Qwen3.5, Qwen3.5-MoE, Qwen3.8 | hybrid Gated DeltaNet + full attention, vision tower and MTP frozen, thinking |
 | `qwen3`, `qwen3-moe` | Qwen3 dense and MoE | qk-norm, thinking |
 | `qwen3-next`, `qwen3-vl` | Qwen3-Next, Qwen3-VL | hybrid attention + MoE with a shared expert; vision wrapper |
 | `muse-glimmer` | Muse-Glimmer | post-norms with `1 + w` gains, `to=self` reasoning channels |
 | `gpt-oss` | gpt-oss | fused experts, attention sinks, harmony format (use a bf16 checkpoint) |
-| `gemma3`, `llama4`, `deepseek-v3`, `glm4-moe`, `olmo` | Gemma 3, Llama 4, DeepSeek-V3 / Kimi K2, GLM-4.5, OLMo 2/3, EXAONE 4 | |
+| `gemma3`, `llama4`, `deepseek-v3`, `deepseek-v4`, `glm4-moe`, `olmo` | Gemma 3/4, Llama 4, DeepSeek-V3/V3.2/V4, Kimi K2, GLM-4.5, OLMo 2/3, EXAONE 4 | DeepSeek-V4: hyper-connections (several residual streams), edits act on each block's output |
 | `generic` | everything else | Llama, Mistral, Phi, GPT-2, … |
 
 ```bash
@@ -184,10 +184,12 @@ models:
     backend: vllm
 ```
 
-The tests build small random models of Qwen3, Qwen3-MoE, Qwen3-Next, gpt-oss, Gemma 3, Llama 4, DeepSeek-V3,
-GLM-4.5 and OLMo 3, plus synthetic Qwen3.5 and Muse-Glimmer checkpoints with the real tensor names. On each of them
-they check four things: detection, the standard pool, measurement (patching and undoing edits in a loaded model),
-and `wsr program`.
+The tests build small random models from the Transformers definitions of Qwen3, Qwen3-MoE, Qwen3-Next, Qwen3.5,
+Qwen3.5-MoE, Muse-Glimmer, gpt-oss, Gemma 3, Llama 4, DeepSeek-V3, DeepSeek-V4, GLM-4.5 and OLMo 3. On each of
+them they check detection, the standard pool and frozen tensors. Nine of them are also measured (edits patched into
+the loaded model and undone), and `wsr program` runs end to end on a MoE model. Qwen3.5 and Muse-Glimmer need
+`transformers>=5` for the `hf` backend; Transformers 5 loads per-expert matrices fused into one tensor, and `wsr`
+writes an edit into the right expert's slice.
 
 ## Agents: any model, any API
 

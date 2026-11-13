@@ -16,7 +16,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-VISION = r"(^|\.)(visual|vision_tower|vision_model|vision_encoder|multi_modal_projector|mm_projector|audio_tower|audio)\."
+VISION = r"(^|\.)(visual|vision\w*|multi_modal_projector|mm_projector|audio\w*)\."
 MTP = r"(^|\.)mtp(\.|$)"
 NO_MEDIA = {"limit_mm_per_prompt": {"image": 0, "video": 0}}
 
@@ -44,8 +44,8 @@ class Family:
 QWEN_SERVE = {"tool_call_parser": "qwen3_coder", "reasoning_parser": "qwen3"}
 FAMILIES = [
     Family("qwen3.5", r"qwen3_5|qwen3\.5|qwen3_8|qwen3\.8|Qwen3_5|Qwen3_8",
-           "Qwen3.5 / Qwen3.8: hybrid Gated DeltaNet + full attention (every 4th layer), vision tower, MTP head, "
-           "centered (1 + w) norms, thinking", thinking=True, frozen=[VISION, MTP], vllm=dict(NO_MEDIA),
+           "Qwen3.5 / Qwen3.8 (dense and MoE): hybrid Gated DeltaNet + full attention (every 4th layer), vision tower, "
+           "MTP head, centered (1 + w) norms, thinking", thinking=True, frozen=[VISION, MTP], vllm=dict(NO_MEDIA),
            hf_class="image-text", serve=QWEN_SERVE),
     Family("qwen3-next", r"qwen3_next|Qwen3Next", "Qwen3-Next: hybrid Gated DeltaNet + gated attention, MoE with a "
            "shared expert, MTP head", frozen=[MTP], serve=QWEN_SERVE),
@@ -54,20 +54,23 @@ FAMILIES = [
     Family("qwen3-moe", r"qwen3_moe|Qwen3Moe", "Qwen3 MoE: routed experts, qk-norm, hybrid thinking", thinking=True,
            serve=QWEN_SERVE),
     Family("qwen3", r"^qwen3$|Qwen3ForCausalLM", "Qwen3 dense: qk-norm, hybrid thinking", thinking=True, serve=QWEN_SERVE),
-    Family("muse-glimmer", r"muse", "Muse-Glimmer: a norm after every attention and MLP output (centered 1 + w gains), "
+    Family("muse-glimmer", r"muse_glimmer|MuseGlimmer", "Muse-Glimmer: a norm after every attention and MLP output (centered 1 + w gains), "
            "qk-norm, logit softcap; reasoning in to=self channels ending with <|eom|>", answer_format="muse",
            skip_special_tokens=False, frozen=[VISION, MTP], vllm=dict(NO_MEDIA), close_tokens=("<|eom|>", "<|end|>"),
            serve={"tool_call_parser": "muse_glimmer", "reasoning_parser": "muse_glimmer"}),
     Family("gpt-oss", r"gpt_oss|GptOss", "gpt-oss: MoE with fused expert tensors and attention sinks; harmony chat "
            "format (analysis / final channels). Edit a bf16 checkpoint: MXFP4 weights cannot be edited in place",
            answer_format="harmony", skip_special_tokens=False, close_tokens=("<|end|>",)),
-    Family("gemma3", r"gemma3|Gemma3", "Gemma 3: norms before and after every sublayer (sandwich), centered gains, "
+    Family("gemma3", r"gemma3|Gemma3|gemma4|Gemma4", "Gemma 3 / 4: norms before and after every sublayer (sandwich), centered gains, "
            "qk-norm, tied embeddings", frozen=[VISION], vllm=dict(NO_MEDIA)),
     Family("llama4", r"llama4|Llama4", "Llama 4: interleaved dense and MoE layers, fused experts plus a shared expert",
            frozen=[VISION], vllm=dict(NO_MEDIA)),
-    Family("deepseek-v3", r"deepseek_v3|DeepseekV3|kimi_k2", "DeepSeek-V3 / Kimi K2: multi-head latent attention, "
-           "routed + shared experts, MTP layer after the last block. FP8 checkpoints must be converted to bf16 first",
-           frozen=[MTP]),
+    Family("deepseek-v3", r"deepseek_v3|deepseek_v32|DeepseekV3|DeepseekV32|kimi_k2", "DeepSeek-V3 / V3.2 / Kimi K2: "
+           "multi-head latent attention, routed + shared experts, MTP layer after the last block. FP8 checkpoints must "
+           "be converted to bf16 first", frozen=[MTP]),
+    Family("deepseek-v4", r"deepseek_v4|DeepseekV4", "DeepSeek-V4: compressed sparse attention, routed + shared experts, "
+           "hyper-connections (several residual streams mixed per block), MTP. FP8/FP4 checkpoints must be converted "
+           "to bf16 first", frozen=[MTP]),
     Family("glm4-moe", r"glm4_moe|Glm4Moe", "GLM-4.5 / 4.6: routed + shared experts, MTP layer, hybrid thinking",
            thinking=True, frozen=[MTP]),
     Family("olmo", r"olmo2|olmo3|Olmo2|Olmo3|exaone4|Exaone4", "OLMo 2/3, EXAONE 4: norms after each sublayer "

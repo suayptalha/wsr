@@ -19,16 +19,18 @@ from .checkpoint import Checkpoint
 
 LAYER_RX = re.compile(r"^(?P<stem>(?:.*\.)?(?:layers|h|blocks|block|layer))\.(?P<i>\d+)\.(?P<rest>.+)$")
 MLP_OUT = ["mlp.down_proj", "mlp.c_proj", "mlp.dense_4h_to_h", "mlp.fc2", "mlp.fc_out", "feed_forward.w2", "ffn.lin2",
-           "mlp.w2", "mlp.proj", "fc2", "feed_forward.down_proj"]
-MOE_MLP = ["mlp", "feed_forward", "block_sparse_moe", "moe"]
+           "mlp.w2", "mlp.proj", "fc2", "feed_forward.down_proj", "ffn.w2", "ffn.down_proj"]
+MOE_MLP = ["mlp", "feed_forward", "block_sparse_moe", "moe", "ffn"]
 EXPERT_OUT = ["down_proj", "w2", "fc2"]
-SHARED_OUT = ["shared_expert.down_proj", "shared_experts.down_proj", "shared_mlp.down_proj", "shared_expert.w2"]
+SHARED_OUT = ["shared_expert.down_proj", "shared_experts.down_proj", "shared_mlp.down_proj", "shared_expert.w2",
+              "shared_experts.w2"]
 ROUTER = ["gate", "router", "gate.wg"]
 QUANT_RX = re.compile(r"(_blocks|_scales|weight_scale(_inv)?|\.qweight|\.qzeros|\.scales|weight_packed)$")
 ATTN_OUT = ["self_attn.o_proj", "self_attn.out_proj", "linear_attn.out_proj", "attn.c_proj", "attn.attention.out_proj",
-            "attention.dense", "self_attention.dense", "attn.out_proj", "attention.o_proj", "attn.o_proj", "attn.proj"]
+            "attention.dense", "self_attention.dense", "attn.out_proj", "attention.o_proj", "attn.o_proj", "attn.proj",
+            "attn.wo_b", "attn.wo"]
 EMBED_RX = re.compile(r"(?:^|\.)(embed_tokens|wte|word_embeddings|embed_in|tok_embeddings|shared)\.weight$")
-UNEMBED = ["lm_head.weight", "embed_out.weight", "lm_head.decoder.weight"]
+UNEMBED = ["lm_head.weight", "embed_out.weight", "lm_head.decoder.weight", "head.weight", "output.weight"]
 FINAL_NORM_RX = re.compile(r"(?:^|\.)(norm|ln_f|final_layer_norm|final_layernorm|norm_f|ln_final)\.weight$")
 CONV1D_TYPES = {"gpt2", "openai-gpt", "imagegpt", "decision_transformer"}
 
