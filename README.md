@@ -430,8 +430,8 @@ zero. Optionally, CEM planning in the changed environment checks that the edit a
 | `python -m wsr.wm.summarize` | one table of every run and baseline |
 
 Environments: Push-T (action scale, controller gain, floor slip, centre of mass) and Reacher (actuator gear, joint
-damping, link mass); new shifts are a few lines in `wsr/wm/envs.py`. A technical report on these experiments is in
-preparation. Full documentation: [docs/world_models.md](docs/world_models.md).
+damping, link mass); new shifts are a few lines in `wsr/wm/envs.py`. The experiments are described in
+[*Weight-Space Programming of JEPA World Models*](https://www.alphaxiv.org/abs/2611.wsp-jepa). Full documentation: [docs/world_models.md](docs/world_models.md).
 
 ## Reproducing the paper
 
@@ -522,6 +522,14 @@ Apache License 2.0; see [LICENSE](LICENSE).
       year={2026},
       publisher={alphaXiv},
       url={https://www.alphaxiv.org/abs/2611.weight-space-reading-language-models},
+}
+
+@misc{2611.wsp-jepa,
+      title={Weight-Space Programming of JEPA World Models},
+      author={{\c{S}}uayp Talha Kocabay},
+      year={2026},
+      publisher={alphaXiv},
+      url={https://www.alphaxiv.org/abs/2611.wsp-jepa},
 }
 ```
 
