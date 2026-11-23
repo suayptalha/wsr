@@ -135,8 +135,8 @@ def normalize_config(raw: dict, source: str = "<config>") -> dict:
              "max_tokens": 8, "params": {"temperature": 0.0, "chat_template_kwargs": {"enable_thinking": False}}}
     cfg["judge"] = j if j is not None else "heuristic"
     cfg["sandbox"] = deep_merge(SANDBOX_DEFAULTS, cfg.get("sandbox") or {})
-    if cfg["sandbox"]["runtime"] not in ("local", "docker", "apptainer"):
-        raise ConfigError(f"{source}: sandbox.runtime must be local, docker or apptainer")
+    if cfg["sandbox"]["runtime"] not in ("local", "docker", "apptainer", "userns"):
+        raise ConfigError(f"{source}: sandbox.runtime must be local, docker, apptainer or userns")
     return cfg
 
 

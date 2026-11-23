@@ -158,6 +158,8 @@ class OpenAIClient:
         native = {"role": "assistant", "content": msg.get("content") or ""}
         if msg.get("tool_calls"):
             native["tool_calls"] = msg["tool_calls"]
+        if msg.get("extra_content"):                 # Gemini: thought signatures must be sent back
+            native["extra_content"] = msg["extra_content"]
         stop = "tool" if calls else ("length" if ch.get("finish_reason") == "length" else "end")
         return Reply(msg.get("content") or "", calls, stop, j.get("usage") or {}, native)
 

@@ -4,6 +4,7 @@
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#weight-space-programming-as-a-tool">wsr program</a> ·
+  <a href="#new-world-models">World models</a> ·
   <a href="#reproducing-the-paper">Paper</a> ·
   <a href="docs/">Docs</a>
 </p>
@@ -32,6 +33,10 @@ the agent: open or closed, served locally or reached through an API.
   give a base model, a goal defined by a dataset, and an agent. The agent edits the weights over several attempts
   and rounds. Each edit is checked on held-out data and on guard suites, and the accepted edits come back as a new
   checkpoint.
+- **New: world models** (`python -m wsr.wm`). Weight-space programming of JEPA world models: the physics of an
+  environment change, the agent is *told* what changed, and it edits the world model's dynamics tensors without
+  data or gradients. Edits are scored by held-out latent rollout error and by planning in the changed environment,
+  next to gradient fine-tuning baselines. See [World models](#new-world-models).
 
 `wsr` is the evaluation harness of the paper *Weight-Space Reading* (Kocabay, 2026). The paper's four experiments
 ship as presets and are covered by tests that check them against the released code. The paper's results are not
@@ -46,6 +51,7 @@ part of this repository.
 - [How it works](#how-it-works)
 - [Models](#models) · [Agents](#agents-any-model-any-api) · [Sandbox](#sandbox) · [Suites](#behavior-suites) · [Edits](#edits)
 - [Weight-space programming](#weight-space-programming) · [as a tool: `wsr program`](#weight-space-programming-as-a-tool)
+- [New: world models (`python -m wsr.wm`)](#new-world-models)
 - [Reproducing the paper](#reproducing-the-paper)
 - [Commands](#commands) · [Layout of results](#where-results-go) · [Tests](#tests) · [License](#license)
 
@@ -56,6 +62,7 @@ git clone https://github.com/suayptalha/wsr && cd wsr
 pip install -e ".[hf,report]"         # Transformers backend (GPU or CPU) and report figures
 pip install -e ".[vllm]"              # optional: fast GPU measurement with vLLM
 pip install -e ".[anthropic]"         # optional: Claude as an agent
+pip install -e ".[wm]"                # optional: JEPA world models (stable-worldmodel, pymunk, MuJoCo)
 docker build -t wsr-sandbox sandbox/  # the isolated sandbox for agent code
 ```
 
@@ -239,7 +246,10 @@ Every Python call of the agent is logged with its code. Each session writes its 
 
 ## Sandbox
 
-Agent code runs in `docker` (recommended), `apptainer` (HPC) or `local` mode. `local` gives no isolation and is
+Agent code runs in `docker` (recommended), `apptainer` (HPC), `userns` or `local` mode. `userns` needs no container
+runtime: each command runs in fresh user, mount, network and PID namespaces created with `unshare`, sees only its
+session directory, the read-only weights and the helper library, and has no network or GPU (use it when `wsr` itself
+already runs inside a container). `local` gives no isolation and is
 meant for trusted agents and tests only. In a container the session directory is mounted at `/work` (writable),
 the weights at `/weights/target` and the edit files at `/interventions`, both read-only. There is no GPU. With the
 built-in harness the container also has no network (`--network none`). The `W` helper
@@ -373,6 +383,56 @@ The output folder holds:
 Before anything is downloaded or loaded, `wsr program` checks that every agent can be reached and that the sandbox
 works. See [docs/programming.md](docs/programming.md).
 
+## New: world models
+
+`wsr.wm` applies weight-space programming to **JEPA world models**. A pretrained
+[LeWorldModel](https://github.com/lucas-maes/le-wm) (a ViT encoder, an action encoder and an action-conditioned
+transformer predictor) was trained in one environment. The environment's physics then change: the action scale, the
+agent's controller gain, the motors, the joint damping, a link's mass, the floor friction or the centre of mass of a
+pushed object. The agent is told about the change in words, reads the weights in the sandbox, and writes new values
+for the dynamics tensors (action encoder, predictor, prediction projection; the encoder that defines the latent space
+stays frozen). It never trains.
+
+```bash
+pip install -e ".[wm]"
+export STABLEWM_HOME=/path/to/stable-wm       # LeWM checkpoints (hf_pusht/, hf_reacher/) and datasets (*.h5)
+python -m wsr.wm e0 --env pusht               # how much every physics change hurts the frozen model
+python -m wsr.wm prep --env pusht             # cache practice and held-out segment sets once
+python -m wsr.wm program wsr/presets/wm/pusht_kv60.yaml --set passes=0
+```
+
+**How an edit is scored.** Dataset episodes are replayed in the original and in the changed environment from the same
+start state with the same actions (counterfactual segments). The frozen encoder embeds the frames; the edited model is
+rolled out autoregressively from three true frames and scored by the latent MSE over the next steps on held-out
+episodes the agent never sees. An edit is accepted when the paired error reduction has a bootstrap interval above
+zero. Optionally, CEM planning in the changed environment checks that the edit also helps control.
+
+<p align="center"><img src="docs/assets/wsr-wm.svg" width="860" alt="World-model weight-space programming: pretrained LeWM and a description of the physics change go to a sandboxed agent, which writes an edited checkpoint scored by held-out latent rollout error and CEM planning"></p>
+
+| what the agent gets (`info`, `passes`, `latents`) | |
+|---|---|
+| `info: text`, `passes: 0` | the description only; it cannot run the model |
+| `info: text`, `passes: k` | plus `k` calls of `run_model`: the rollout error of a candidate edit on practice segments |
+| `info: none` | only that "the dynamics changed" |
+| `latents: true` | plus the practice segments' embeddings and true states in both physics |
+| `text_from: <shift>` | a *wrong* description (control) |
+| `edit_scope: ["^predictor\\."]` | restrict which tensors may change (e.g. predictor-only) |
+
+| command | |
+|---|---|
+| `python -m wsr.wm e0 / prep --env E` | frozen model under every shift; cache segment sets |
+| `python -m wsr.wm program PROGRAM [--set k=v]` | one weight-space program (rounds, attempts, acceptance, edited checkpoint) |
+| `python -m wsr.wm baseline --v2 --env E --shift S` | gradient fine-tuning baselines; subset, learning rate and stop step chosen on a validation split |
+| `python -m wsr.wm plan --env E --shift S --models base,agent:RUN,ft:FILE` | CEM planning success of any set of models |
+| `python -m wsr.wm param CONFIG --env E --family F --values ...` | zero-shot *parametric* programs `make_edit(x)` for a whole family of changes |
+| `python -m wsr.wm reading-models / read / read-score` | weight-space reading: which change produced a fine-tuned predictor? |
+| `python -m wsr.wm audit-judge` | LLM-judge audit of every session's code (reasoning vs. fitting) |
+| `python -m wsr.wm.summarize` | one table of every run and baseline |
+
+Environments: Push-T (action scale, controller gain, floor slip, centre of mass) and Reacher (actuator gear, joint
+damping, link mass); new shifts are a few lines in `wsr/wm/envs.py`. A technical report on these experiments is in
+preparation. Full documentation: [docs/world_models.md](docs/world_models.md).
+
 ## Reproducing the paper
 
 ```yaml
@@ -414,6 +474,7 @@ family. A release 0.1 `config.json` still loads, and `--round full_dose` still w
 | `wsr program PROGRAM [--set key=value]` | weight-space programming as a tool: returns an edited checkpoint |
 | `wsr export --model M --edit FILE --out DIR [--push REPO]` | apply an edit file and save (or upload) the new model |
 | `wsr data` | probe pools of the paper suite |
+| `python -m wsr.wm ...` | world models: see [World models](#new-world-models) |
 
 ## Where results go
 
@@ -444,7 +505,9 @@ the whole pipeline runs end to end on a CPU in about a minute. They cover:
 - the agent loop, with scripted models;
 - the full reading and programming pipelines, end to end on a CPU;
 - `wsr program`: acceptance and rejection, several rounds, the exported checkpoint (loadable, with hard-linked
-  shards), and log-probability scoring.
+  shards), and log-probability scoring;
+- `wsr.wm`: shift families, the acceptance statistics, the agent prompt, edit scopes and the `userns` sandbox set-up
+  (no world-model download needed).
 
 ## License
 

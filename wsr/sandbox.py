@@ -25,6 +25,14 @@ from pathlib import Path
 
 CONTAINER_PATHS = {"work": "/work", "target": "/weights/target", "interventions": "/interventions", "pkg": "/opt/wsr",
                    "home": "/home/agent"}
+# ``userns``: for running wsr itself inside a container (or any host) where no container runtime is available. Each
+# command runs in fresh user, mount, network and PID namespaces (util-linux ``unshare``): no network, the mounts below
+# on a tmpfs at /mnt (read-only where asked), the host paths in ``sandbox.hide`` covered by empty tmpfs mounts (default
+# USERNS_HIDE; list your own data directories there), GPU device files replaced by /dev/null, and the command run by an
+# unprivileged user in a nested user namespace, so it cannot undo any of this. Needs unprivileged user namespaces.
+USERNS_PATHS = {"work": "/mnt/work", "target": "/mnt/weights/target", "interventions": "/mnt/interventions",
+                "pkg": "/mnt/wsr", "home": "/mnt/home"}
+USERNS_HIDE = ["/home", "/root", "/tmp", "/var/tmp", "/scratch", "/data", "/srv", "/media"]
 MAX_OUTPUT = 20000
 
 
@@ -44,8 +52,12 @@ class Sandbox:
         self.mounts = {k: (str(Path(h).resolve()), ro) for k, (h, ro) in mounts.items()}
         self.network = network
         self.container = None
-        self.paths = ({k: CONTAINER_PATHS.get(k, f"/mnt/{k}") for k in self.mounts} if self.runtime != "local"
-                      else {k: h for k, (h, _) in self.mounts.items()})
+        if self.runtime == "userns":
+            self.paths = {k: USERNS_PATHS.get(k, f"/mnt/{k}") for k in self.mounts}
+        else:
+            self.paths = ({k: CONTAINER_PATHS.get(k, f"/mnt/{k}") for k in self.mounts} if self.runtime != "local"
+                          else {k: h for k, (h, _) in self.mounts.items()})
+        self._script = None
         work = self.paths["work"]
         self.python = "/usr/bin/python3" if self.runtime != "local" else sys.executable
         self.env = {"HOME": self.paths.get("home", work), "PATH": f"{work}/bin:/usr/local/bin:/usr/bin:/bin",
@@ -76,6 +88,9 @@ class Sandbox:
             self.container = name
 
     def stop(self) -> None:
+        if self._script and os.path.exists(self._script):
+            os.remove(self._script)
+            self._script = None
         if self.container:
             subprocess.run(["docker", "rm", "-f", self.container], capture_output=True)
             self.container = None
@@ -94,7 +109,11 @@ class Sandbox:
     def exec(self, command: str, timeout: float = 600) -> tuple[int, str]:
         """Run a shell command in the session directory. -> (exit code, combined output)."""
         t = max(5, int(timeout))
-        if self.runtime == "docker":
+        if self.runtime == "userns":
+            argv = ["unshare", "-rnm", "--pid", "--fork", "--mount-proc", "--propagation", "private",
+                    "bash", self._userns_script(), str(t), command]
+            env = {"PATH": "/usr/local/bin:/usr/bin:/bin"}
+        elif self.runtime == "docker":
             self.start()
             argv = ["docker", "exec", "-w", self.paths["work"], self.container, "timeout", "-k", "5", str(t),
                     "bash", "-lc", command]
@@ -116,6 +135,29 @@ class Sandbox:
         if rc == 124 and "[killed" not in out:
             out += f"\n[killed: the command ran longer than {t} s]"
         return rc, out
+
+    def _userns_script(self) -> str:
+        """The namespace set-up script (kept in a host temporary file the sandboxed command cannot see)."""
+        if self._script and os.path.exists(self._script):
+            return self._script
+        import tempfile
+        L = ["set -e", "T=$1; CMD=$2", "mount -t tmpfs -o mode=755 tmpfs /mnt"]
+        for k, (h, ro) in self.mounts.items():
+            p = shlex.quote(self.paths[k])
+            L += [f"mkdir -p {p}", f"mount --bind {shlex.quote(h)} {p}"]
+            if ro:
+                L.append(f"mount -o remount,bind,ro {p}")
+        for d in self.sb.get("hide") or USERNS_HIDE:
+            L.append(f"if [ -d {shlex.quote(d)} ]; then mount -t tmpfs -o mode=755 tmpfs {shlex.quote(d)}; fi")
+        L.append("for d in /dev/nvidia* /dev/dri/*; do [ -c \"$d\" ] && mount --bind /dev/null \"$d\" || true; done")
+        envs = " ".join(shlex.quote(f"{k}={v}") for k, v in self.env.items())
+        L.append(f"cd {shlex.quote(self.paths['work'])}")
+        L.append(f"exec unshare -U --map-user=1000 --map-group=1000 env -i {envs} timeout -k 5 \"$T\" bash -c \"$CMD\"")
+        fd, path = tempfile.mkstemp(prefix="wsr_userns_", suffix=".sh")
+        with os.fdopen(fd, "w") as f:
+            f.write("\n".join(L) + "\n")
+        self._script = path
+        return path
 
     def cli(self, argv: list[str], extra_env: dict[str, str] | None = None) -> tuple[list[str], dict]:
         """Command + environment that run an agent CLI inside the sandbox (external harnesses)."""
@@ -156,8 +198,10 @@ def install_python_logger(work_host: Path, sb: Sandbox) -> None:
     (work_host / "bin").mkdir(parents=True, exist_ok=True)
     (work_host / "logs" / "code").mkdir(parents=True, exist_ok=True)
     for name in ["python", "python3"]:
-        (work_host / "bin" / name).write_text(wrapper)
-        (work_host / "bin" / name).chmod(0o755)
+        tmp = work_host / "bin" / f".{name}.tmp"       # write then rename: the old file may still be executing
+        tmp.write_text(wrapper)
+        tmp.chmod(0o755)
+        os.replace(tmp, work_host / "bin" / name)
 
 
 def install_helper(dest: Path) -> Path:
@@ -173,6 +217,8 @@ def install_helper(dest: Path) -> Path:
 
 def check_runtime(cfg: dict) -> tuple[bool, str]:
     rt = cfg["sandbox"]["runtime"]
+    if rt == "userns":
+        return (bool(shutil.which("unshare")), "userns (unshare)" if shutil.which("unshare") else "`unshare` not found")
     if rt == "local":
         return True, "local (not isolated: agents run code directly on this machine)"
     exe = "docker" if rt == "docker" else "apptainer"

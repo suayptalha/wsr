@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wsr"
-version = "0.4.0"
-description = "Weight-space reading and programming: can a language model predict, or write, what an edit to a network's weights does?"
+version = "0.5.0"
+description = "Weight-space reading and programming: can a language model predict, or write, what an edit to a network's weights does? Now also for JEPA world models."
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
 authors = [{name = "Şuayp Talha Kocabay"}]
-keywords = ["interpretability", "weight-space", "language-models", "evaluation", "agents"]
+keywords = ["interpretability", "weight-space", "language-models", "evaluation", "agents", "world-models", "jepa"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -23,6 +23,8 @@ hf = ["transformers>=4.45", "accelerate"]
 vllm = ["vllm"]
 anthropic = ["anthropic"]
 paper = ["datasets", "math-verify", "vllm"]
+wm = ["stable-worldmodel", "stable-pretraining", "transformers>=4.50", "hydra-core", "h5py", "gymnasium", "pymunk",
+      "pygame", "shapely", "opencv-python-headless", "dm_control", "mujoco<3.12"]
 report = ["matplotlib"]
 all = ["transformers>=4.45", "accelerate", "anthropic", "datasets", "math-verify", "matplotlib"]
 dev = ["pytest", "transformers>=4.45", "matplotlib"]

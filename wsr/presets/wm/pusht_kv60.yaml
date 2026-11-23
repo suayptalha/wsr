@@ -1,0 +1,22 @@
+# A world-model weight-space program (python -m wsr.wm program <this file> [--set key=value]).
+# The agent is told that the Push-T agent's PD velocity gain changed from 20 to 60 and edits LeWM's dynamics tensors.
+env: pusht
+shift: pusht/kv60
+agent: gemini
+agents:
+  gemini: {provider: gemini, model: gemini-4-hydrogen, params: {reasoning_effort: high}}
+  # claude: {provider: anthropic, model: claude-opus-5-5}
+  # local: {provider: openai, base_url: http://localhost:8000/v1, model: my-model}
+info: text            # text | none
+passes: 0             # forward passes through run_model
+latents: false
+hours: 1.0
+rounds: 1
+attempts: 1
+horizon: 5
+n_practice: 64
+n_heldout: 256
+seed: 1
+practice_seed: 101
+accept: {min_gain: 0.0, significant: true, confidence: 0.95, max_rel_norm: null}
+sandbox: {runtime: docker, image: wsr-sandbox}
